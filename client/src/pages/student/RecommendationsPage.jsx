@@ -71,6 +71,7 @@ function CareerMatches({ run, topCount }) {
           ({
             careerId,
             careerTitle,
+            career,
             skillScore,
             interestScore,
             totalScore,
@@ -85,7 +86,12 @@ function CareerMatches({ run, topCount }) {
                   <span className="mr-2 text-sm tabular-nums text-muted">
                     {rank}.
                   </span>
-                  {careerTitle}
+                  <Link
+                    to={`/careers/${encodeURIComponent(career.slug)}`}
+                    className="underline decoration-line underline-offset-4 hover:decoration-accent focus-visible:outline-accent"
+                  >
+                    {careerTitle}
+                  </Link>
                 </h3>
                 <p className="whitespace-nowrap text-sm text-muted">
                   <strong className="text-xl tabular-nums text-accent">

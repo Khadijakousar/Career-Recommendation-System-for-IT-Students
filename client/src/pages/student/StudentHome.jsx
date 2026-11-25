@@ -22,13 +22,18 @@ const tasks = [
     'Career recommendations',
     'See which careers match your assessments.',
   ],
+  [
+    '/roadmaps',
+    'Learning roadmaps',
+    'Reopen your saved roadmaps and track progress.',
+  ],
 ];
 
 export default function StudentHome() {
   return (
     <StudentPage
       title="Student dashboard"
-      description="Manage your profile, update your assessments, and view career recommendations."
+      description="Manage your profile and assessments, explore career matches, and track your learning."
     >
       <ul className="divide-y divide-line border-y border-line">
         {tasks.map(([path, title, description]) => (

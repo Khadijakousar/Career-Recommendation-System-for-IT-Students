@@ -5,6 +5,7 @@ import { errorHandler, HttpError } from './middleware/errorHandler.js';
 import { createAdminRouter } from './modules/admin/admin.routes.js';
 import { createAuthRouter } from './modules/auth/auth.routes.js';
 import { createRecommendationRouter } from './modules/recommendations/recommendations.routes.js';
+import { createRoadmapRouter } from './modules/roadmaps/roadmaps.routes.js';
 import { createStudentRouter } from './modules/student/student.routes.js';
 
 export function createApp({ clientUrl, checkDatabase, database, jwtSecret }) {
@@ -35,6 +36,7 @@ export function createApp({ clientUrl, checkDatabase, database, jwtSecret }) {
     createRecommendationRouter({ database, jwtSecret }),
   );
   app.use('/api', createStudentRouter({ database, jwtSecret }));
+  app.use('/api', createRoadmapRouter({ database, jwtSecret }));
 
   app.use((_request, _response, next) => {
     next(new HttpError(404, 'Route not found'));

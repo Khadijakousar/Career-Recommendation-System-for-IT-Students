@@ -66,6 +66,12 @@ Save skill ratings, then select **Generate matches** on the recommendations page
 
 Each run saves the career title, scores, rank, and scoring mode. The latest run reloads when you return, and catalog edits apply to new runs.
 
+## Skill gaps and roadmaps
+
+Open a career from your recommendations to compare your ratings with its requirements. The chart shows the gaps, ordered by missing levels multiplied by skill importance. Generate a roadmap to start with foundation skills and open the learning resources for each step.
+
+Use **Roadmaps** to reopen your plans. Mark steps as done to track progress. After finishing a step, confirm the separate skill rating update if you want your assessment to reflect it. Regenerating a roadmap keeps the status of steps that are still needed.
+
 ## Checks
 
 | Folder | Commands |
@@ -73,6 +79,6 @@ Each run saves the career title, scores, rank, and scoring mode. The latest run 
 | `client/` | `npm run lint`, `npm run format:check`, `npm run build` |
 | `server/` | `npm run lint`, `npm run format:check`, `npm run build`, `npm test` |
 
-The server tests cover health, authentication, admin and student access and validation, and recommendation scoring. They use test data in memory. To check the live database connection, use the browser or the curl command above.
+The server tests cover health, authentication, access and validation, recommendation scoring, and roadmap progress and rating rules. They use test data in memory. To check the live database connection, use the browser or the curl command above.
 
 See [plan.md](plan.md) for the architecture, scope, and implementation phases.

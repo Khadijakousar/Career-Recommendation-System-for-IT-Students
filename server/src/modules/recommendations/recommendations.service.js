@@ -9,6 +9,7 @@ const resultFields = {
   interestScore: true,
   totalScore: true,
   rank: true,
+  career: { select: { slug: true } },
 };
 
 const runFields = {

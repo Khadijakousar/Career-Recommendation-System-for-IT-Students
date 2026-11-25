@@ -3,8 +3,8 @@ import { z } from 'zod';
 const empty = z.strictObject({});
 const id = z.string().trim().min(1).max(100);
 
-export function studentRequest(body = z.undefined()) {
-  return z.object({ body, params: empty, query: empty });
+export function studentRequest(body = z.undefined(), params = empty) {
+  return z.object({ body, params, query: empty });
 }
 
 export const profileBody = z.strictObject({

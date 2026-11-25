@@ -6,9 +6,12 @@ import CatalogPage from './pages/admin/CatalogPage.jsx';
 import LoginPage from './pages/auth/LoginPage.jsx';
 import RegisterPage from './pages/auth/RegisterPage.jsx';
 import SetupPage from './pages/SetupPage.jsx';
+import CareerDetailPage from './pages/student/CareerDetailPage.jsx';
 import InterestAssessmentPage from './pages/student/InterestAssessmentPage.jsx';
 import ProfilePage from './pages/student/ProfilePage.jsx';
 import RecommendationsPage from './pages/student/RecommendationsPage.jsx';
+import RoadmapListPage from './pages/student/RoadmapListPage.jsx';
+import RoadmapPage from './pages/student/RoadmapPage.jsx';
 import SkillsAssessmentPage from './pages/student/SkillsAssessmentPage.jsx';
 import StudentHome from './pages/student/StudentHome.jsx';
 import StudentLayout from './pages/student/StudentLayout.jsx';
@@ -46,6 +49,9 @@ export default function App() {
                   path="/recommendations"
                   element={<RecommendationsPage />}
                 />
+                <Route path="/careers/:slug" element={<CareerDetailPage />} />
+                <Route path="/roadmaps" element={<RoadmapListPage />} />
+                <Route path="/roadmaps/:id" element={<RoadmapPage />} />
               </Route>
             </Route>
             <Route element={<RoleRoute role="ADMIN" />}>
