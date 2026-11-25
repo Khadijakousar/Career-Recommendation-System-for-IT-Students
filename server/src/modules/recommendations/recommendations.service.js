@@ -21,11 +21,14 @@ const runFields = {
 
 export function createRecommendationService(database) {
   return {
-    async latest(userId) {
+    async latest(userId, resultLimit) {
       const run = await database.recommendationRun.findFirst({
         where: { userId },
         orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-        select: runFields,
+        select: {
+          ...runFields,
+          results: { ...runFields.results, take: resultLimit },
+        },
       });
       return { run, topCount: TOP_N };
     },

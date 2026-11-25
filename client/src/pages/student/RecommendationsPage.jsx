@@ -8,28 +8,18 @@ import RemoteStatus from '../../components/RemoteStatus.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useRemoteData } from '../../hooks/useRemoteData.js';
 import { useStudentSave } from '../../hooks/useStudentSave.js';
+import { formatMatchDate, formatMatchScore } from './matchFormatting.js';
 import SaveFeedback from './SaveFeedback.jsx';
 import StudentPage from './StudentPage.jsx';
-
-const percentage = new Intl.NumberFormat('en', {
-  maximumFractionDigits: 1,
-  style: 'percent',
-});
-const runDate = new Intl.DateTimeFormat(undefined, {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-});
-
-function formatScore(score) {
-  return percentage.format(score / 100);
-}
 
 function MatchScore({ label, score }) {
   return (
     <div className="min-w-0">
       <div className="flex items-baseline justify-between gap-2 text-sm">
         <span className="text-muted">{label}</span>
-        <span className="font-semibold tabular-nums">{formatScore(score)}</span>
+        <span className="font-semibold tabular-nums">
+          {formatMatchScore(score)}
+        </span>
       </div>
       <meter
         aria-label={label}
@@ -95,7 +85,7 @@ function CareerMatches({ run, topCount }) {
                 </h3>
                 <p className="whitespace-nowrap text-sm text-muted">
                   <strong className="text-xl tabular-nums text-accent">
-                    {formatScore(totalScore)}
+                    {formatMatchScore(totalScore)}
                   </strong>{' '}
                   match
                 </p>
@@ -148,7 +138,7 @@ function Recommendations({ initial, token }) {
               Latest matches
             </h2>
             <time dateTime={run.createdAt} className="text-sm text-muted">
-              {runDate.format(new Date(run.createdAt))}
+              {formatMatchDate(run.createdAt)}
             </time>
           </div>
           <CareerMatches run={run} topCount={topCount} />

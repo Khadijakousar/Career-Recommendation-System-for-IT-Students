@@ -72,6 +72,10 @@ Open a career from your recommendations to compare your ratings with its require
 
 Use **Roadmaps** to reopen your plans. Mark steps as done to track progress. After finishing a step, confirm the separate skill rating update if you want your assessment to reflect it. Regenerating a roadmap keeps the status of steps that are still needed.
 
+## Student dashboard
+
+The dashboard shows profile and assessment completion, up to three matches from the latest saved recommendation run, active roadmap progress, and average saved skill ratings by category. A rating of zero is included in the average. Skills without a saved rating are excluded.
+
 ## Checks
 
 | Folder | Commands |
@@ -79,6 +83,6 @@ Use **Roadmaps** to reopen your plans. Mark steps as done to track progress. Aft
 | `client/` | `npm run lint`, `npm run format:check`, `npm run build` |
 | `server/` | `npm run lint`, `npm run format:check`, `npm run build`, `npm test` |
 
-The server tests cover health, authentication, access and validation, recommendation scoring, and roadmap progress and rating rules. They use test data in memory. To check the live database connection, use the browser or the curl command above.
+The server tests cover health, authentication, access and validation, recommendation scoring, roadmap rules, and dashboard summaries. They use test data in memory. To check the live database connection, use the browser or the curl command above.
 
 See [plan.md](plan.md) for the architecture, scope, and implementation phases.

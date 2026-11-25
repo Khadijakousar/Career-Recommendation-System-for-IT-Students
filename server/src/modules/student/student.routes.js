@@ -2,6 +2,8 @@ import { json, Router } from 'express';
 import { authenticate, requireRole } from '../../middleware/auth.js';
 import { validate } from '../../middleware/validate.js';
 import { createAuthService } from '../auth/auth.service.js';
+import { createDashboardController } from '../dashboard/dashboard.controller.js';
+import { createDashboardService } from '../dashboard/dashboard.service.js';
 import { createStudentController } from './student.controller.js';
 import {
   answersBody,
@@ -25,6 +27,7 @@ export function createStudentRouter({ database, jwtSecret }) {
   const write = [...read, json({ limit: '128kb' })];
   const noBody = validate(studentRequest());
   const controller = createStudentController(createStudentService(database));
+  const dashboard = createDashboardController(createDashboardService(database));
 
   router.get('/profile', ...read, noBody, controller.profile);
   router.put(
@@ -48,6 +51,7 @@ export function createStudentRouter({ database, jwtSecret }) {
     controller.interestQuestions,
   );
   router.get('/me/interests', ...read, noBody, controller.answers);
+  router.get('/me/dashboard', ...read, noBody, dashboard);
   router.put(
     '/me/interests',
     ...write,

@@ -49,6 +49,7 @@ function request(path, { token, method = 'GET', body } = {}) {
 
 test('student endpoints require a student token', async () => {
   const routes = [
+    ['GET', '/me/dashboard'],
     ['GET', '/profile'],
     ['PUT', '/profile'],
     ['GET', '/skills'],

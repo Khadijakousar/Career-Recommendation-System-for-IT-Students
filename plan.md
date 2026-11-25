@@ -54,6 +54,7 @@ Build a university final-year project that helps IT students choose a career, un
 - Phase 4 is implemented and verified. Chrome verified profile and assessment saves, reloads, and visible validation at desktop and 360px widths. A live API check with two students verified ownership, atomic saves, and that question responses omit option weights. All 24 backend tests passed.
 - Phase 5 is implemented and verified. All 35 backend tests passed. The local API checks verified both scoring modes, student isolation, empty runs, and that renaming a career leaves past results intact. Chrome verified the highlights, scoring breakdown, and saved results at desktop and 360px widths.
 - Phase 6 is implemented and verified. Chrome verified career details, the skill-gap chart at desktop and 360px widths, resource links, progress tracking, and the rating confirmation. The local API verified roadmap ordering, regeneration, completed empty roadmaps, and ownership. All 39 backend tests passed.
+- Phase 7 is implemented and verified. The local API verified assessment counts, skill averages, the latest three matches, active roadmap progress, and isolation between students. Chrome verified new and returning dashboards, retry after an error, and the skills chart at desktop and 360px widths. All 42 backend tests passed.
 
 ## Working agreement
 
