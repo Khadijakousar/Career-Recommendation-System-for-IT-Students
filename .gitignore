@@ -1,0 +1,13 @@
+# Local project specifications
+/docs/
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Dependencies and build output
+node_modules/
+/client/dist/
+/server/src/generated/
+coverage/

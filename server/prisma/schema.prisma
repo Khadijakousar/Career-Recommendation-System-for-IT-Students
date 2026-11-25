@@ -1,0 +1,234 @@
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+enum ResourceType {
+  COURSE
+  VIDEO
+  ARTICLE
+  BOOK
+  DOCS
+}
+
+enum RecommendationMode {
+  SKILLS_ONLY
+  SKILLS_AND_INTERESTS
+}
+
+enum StepStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  DONE
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(STUDENT)
+  createdAt    DateTime @default(now())
+
+  profile            StudentProfile?
+  skills             StudentSkill[]
+  interestAnswers    InterestAnswer[]
+  recommendationRuns RecommendationRun[]
+  roadmaps           Roadmap[]
+}
+
+model StudentProfile {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  program          String
+  semester         Int
+  cgpa             Decimal? @db.Decimal(3, 2)
+  completedCourses String[] @default([])
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Skill {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  category    String
+  description String?
+  stage       Int     @default(1)
+
+  careerSkills  CareerSkill[]
+  studentSkills StudentSkill[]
+  resources     Resource[]
+  roadmapSteps  RoadmapStep[]
+}
+
+model InterestArea {
+  id   String @id @default(cuid())
+  name String @unique
+
+  careers       Career[]
+  optionWeights InterestOptionWeight[]
+}
+
+model Career {
+  id             String @id @default(cuid())
+  title          String @unique
+  slug           String @unique
+  description    String
+  interestAreaId String
+
+  interestArea   InterestArea           @relation(fields: [interestAreaId], references: [id], onDelete: Restrict)
+  requiredSkills CareerSkill[]
+  results        RecommendationResult[]
+  roadmaps       Roadmap[]
+}
+
+model CareerSkill {
+  id            String @id @default(cuid())
+  careerId      String
+  skillId       String
+  requiredLevel Int
+  weight        Int
+
+  career Career @relation(fields: [careerId], references: [id], onDelete: Cascade)
+  skill  Skill  @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([careerId, skillId])
+}
+
+model StudentSkill {
+  id      String @id @default(cuid())
+  userId  String
+  skillId String
+  level   Int
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, skillId])
+}
+
+model InterestQuestion {
+  id    String @id @default(cuid())
+  text  String
+  order Int
+
+  options InterestOption[]
+}
+
+model InterestOption {
+  id         String @id @default(cuid())
+  questionId String
+  text       String
+
+  question InterestQuestion       @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  weights  InterestOptionWeight[]
+  answers  InterestAnswer[]
+
+  @@unique([questionId, id])
+}
+
+model InterestOptionWeight {
+  id             String @id @default(cuid())
+  optionId       String
+  interestAreaId String
+  points         Int
+
+  option       InterestOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  interestArea InterestArea   @relation(fields: [interestAreaId], references: [id], onDelete: Cascade)
+
+  @@unique([optionId, interestAreaId])
+}
+
+model InterestAnswer {
+  id         String @id @default(cuid())
+  userId     String
+  questionId String
+  optionId   String
+
+  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  option InterestOption @relation(fields: [questionId, optionId], references: [questionId, id], onDelete: Restrict)
+
+  @@unique([userId, questionId])
+}
+
+model Resource {
+  id       String       @id @default(cuid())
+  skillId  String
+  title    String
+  url      String
+  type     ResourceType
+  provider String?
+  isFree   Boolean      @default(true)
+
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@index([skillId])
+}
+
+model RecommendationRun {
+  id        String             @id @default(cuid())
+  userId    String
+  mode      RecommendationMode
+  createdAt DateTime           @default(now())
+
+  user    User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  results RecommendationResult[]
+
+  @@index([userId, createdAt])
+}
+
+model RecommendationResult {
+  id            String @id @default(cuid())
+  runId         String
+  careerId      String
+  skillScore    Float
+  interestScore Float
+  totalScore    Float
+  rank          Int
+
+  run    RecommendationRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  career Career            @relation(fields: [careerId], references: [id], onDelete: Restrict)
+
+  @@unique([runId, careerId])
+  @@unique([runId, rank])
+}
+
+model Roadmap {
+  id        String   @id @default(cuid())
+  userId    String
+  careerId  String
+  createdAt DateTime @default(now())
+
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  career Career        @relation(fields: [careerId], references: [id], onDelete: Restrict)
+  steps  RoadmapStep[]
+
+  @@unique([userId, careerId])
+}
+
+model RoadmapStep {
+  id          String     @id @default(cuid())
+  roadmapId   String
+  skillId     String
+  order       Int
+  startLevel  Int
+  targetLevel Int
+  status      StepStatus @default(NOT_STARTED)
+
+  roadmap Roadmap @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  skill   Skill   @relation(fields: [skillId], references: [id], onDelete: Restrict)
+
+  @@unique([roadmapId, skillId])
+}

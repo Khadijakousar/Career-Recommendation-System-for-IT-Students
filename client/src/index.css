@@ -1,0 +1,29 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-paper: #f6f5ef;
+  --color-ink: #172922;
+  --color-muted: #506259;
+  --color-line: #c7cdc2;
+  --color-accent: #235e49;
+  --color-error: #943e32;
+  --font-display: Georgia, 'Times New Roman', serif;
+}
+
+@layer components {
+  .auth-button {
+    @apply min-h-11 bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent disabled:opacity-60 motion-reduce:transition-none;
+  }
+
+  .auth-link {
+    @apply text-sm font-semibold text-accent underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent;
+  }
+
+  .catalog-button {
+    @apply min-h-10 border border-line px-3 py-2 text-sm font-semibold transition-colors hover:bg-accent/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50 motion-reduce:transition-none;
+  }
+
+  .form-input {
+    @apply mt-2 block min-h-11 w-full min-w-0 border border-line bg-white/70 px-3 py-2 text-base focus:border-accent focus:outline-2 focus:outline-accent aria-invalid:border-error;
+  }
+}
