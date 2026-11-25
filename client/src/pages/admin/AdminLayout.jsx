@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
+import SkipLink from '../../components/SkipLink.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { catalogSections } from './catalogConfig.js';
 
@@ -20,6 +21,7 @@ export default function AdminLayout() {
   const { user, signOut } = useAuth();
   return (
     <div className="min-h-screen border-t-4 border-accent bg-paper text-ink">
+      <SkipLink />
       <div className="mx-auto max-w-7xl px-4 sm:px-10">
         <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b border-line py-5">
           <NavLink to="/admin" className="auth-link">
@@ -46,7 +48,11 @@ export default function AdminLayout() {
               ))}
             </nav>
           </aside>
-          <main className="min-w-0 py-7 sm:py-10">
+          <main
+            id="main-content"
+            tabIndex={-1}
+            className="min-w-0 py-7 sm:py-10"
+          >
             <Outlet />
           </main>
         </div>

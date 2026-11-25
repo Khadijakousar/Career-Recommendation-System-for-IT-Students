@@ -10,7 +10,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "format:check": "prettier --check index.html src vite.config.js eslint.config.js package.json"
+    "format:check": "prettier --check index.html src vite.config.js vercel.json eslint.config.js package.json"
   },
   "dependencies": {
     "react": "^19.2.0",

@@ -2,6 +2,10 @@
 
 A university final-year project to help IT students compare career paths, identify skill gaps, and plan what to learn. Career recommendations use rule-based matching based on the student's skill ratings and interests.
 
+## Architecture
+
+The React client uses React Router for navigation and sends JSON requests to the Express API. The API validates requests, checks roles and ownership, and uses Prisma to read and write PostgreSQL. The scoring engine ranks careers from saved assessment data and the admin-managed catalog. The database stores each ranking so students can revisit it later.
+
 ## Local setup
 
 Use Node.js 24 LTS (24.12 or newer within the 24.x line), npm, and PostgreSQL. With nvm, run `nvm install` and `nvm use` from the repository root.
@@ -84,5 +88,19 @@ The dashboard shows profile and assessment completion, up to three matches from 
 | `server/` | `npm run lint`, `npm run format:check`, `npm run build`, `npm test` |
 
 The server tests cover health, authentication, access and validation, recommendation scoring, roadmap rules, and dashboard summaries. They use test data in memory. To check the live database connection, use the browser or the curl command above.
+
+For a local demo, register a student and sign in. Save a profile and both assessments, generate matches, open a career, and complete a roadmap step. Refresh the dashboard to see your saved progress. Sign out and use the seeded admin account to open the catalog. Check both workspaces at desktop width and at 360px.
+
+## Deployment
+
+The frontend can run on Vercel, the API on Render, and PostgreSQL on Neon. Pick the Git branch you want to release and create a separate hosted database for it.
+
+1. In Neon, create a database and copy its direct PostgreSQL connection string with TLS enabled. Use it for `DATABASE_URL` on Render and when running migrations. [Neon connection guide](https://neon.com/docs/connect/connect-from-any-app)
+2. Create a Render Node web service with root directory `server`, build command `npm ci --include=dev && npm run build`, start command `npm start`, and health check path `/api/health`. Set `DATABASE_URL`, a random `JWT_SECRET` of at least 32 bytes, and `CLIENT_URL` to the HTTPS origin of the Vercel project without a trailing slash. Render supplies `PORT`. [Render web services](https://render.com/docs/web-services)
+3. Apply the checked-in migrations with `npm run db:migrate`. Render paid web services can use this as a pre-deploy command. On services without a pre-deploy command, run it from a trusted machine against the target database before each release. For first-time setup, run `npm run db:seed` from `server/` with the same database URL and the chosen `ADMIN_EMAIL` and `ADMIN_PASSWORD`. Keep seed credentials in the environment used for seeding. [Render deploy commands](https://render.com/docs/deploys)
+4. In Vercel, use the Vite preset, root directory `client`, build command `npm run build`, and output directory `dist`. Set `VITE_API_URL` to the Render HTTPS URL followed by `/api` before building. The checked-in rewrite serves the React app when a user opens a route directly. [Vercel SPA rewrites](https://vercel.com/kb/guide/why-is-my-deployed-project-giving-404)
+5. Open the API health endpoint, register a test student, sign in, and refresh a nested route such as `/assessment/skills`. Confirm the seeded admin can sign in and that public signup creates student accounts.
+
+For a hosted API, verify that Express identifies the caller through the hosting proxy. Set `TRUST_PROXY_HOPS` only when you have verified the fixed number of trusted hops on every path to the API. The local default is `0`. Confirm that requests from separate clients have separate authentication rate limits before making the service public. [Express proxy settings](https://expressjs.com/en/guide/behind-proxies/)
 
 See [plan.md](plan.md) for the architecture, scope, and implementation phases.

@@ -26,7 +26,16 @@ export default function App() {
   return (
     <AuthProvider>
       <Routes>
-        <Route path="/" element={<SetupPage />} />
+        <Route
+          path="/"
+          element={
+            import.meta.env.DEV ? (
+              <SetupPage />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
         <Route element={<SessionGate />}>
           <Route element={<PublicAuthRoute />}>
             <Route path="/login" element={<LoginPage />} />

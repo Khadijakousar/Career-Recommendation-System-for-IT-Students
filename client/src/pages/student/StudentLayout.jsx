@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
+import SkipLink from '../../components/SkipLink.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 
 const navigation = [
@@ -15,6 +16,7 @@ export default function StudentLayout() {
 
   return (
     <div className="min-h-screen border-t-4 border-accent bg-paper text-ink">
+      <SkipLink />
       <div className="mx-auto max-w-6xl px-4 sm:px-10">
         <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b border-line py-5">
           <NavLink className="auth-link" to="/dashboard">
@@ -44,7 +46,7 @@ export default function StudentLayout() {
             </NavLink>
           ))}
         </nav>
-        <main className="py-8 sm:py-12">
+        <main id="main-content" tabIndex={-1} className="py-8 sm:py-12">
           <Outlet />
         </main>
       </div>

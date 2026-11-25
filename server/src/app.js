@@ -8,8 +8,15 @@ import { createRecommendationRouter } from './modules/recommendations/recommenda
 import { createRoadmapRouter } from './modules/roadmaps/roadmaps.routes.js';
 import { createStudentRouter } from './modules/student/student.routes.js';
 
-export function createApp({ clientUrl, checkDatabase, database, jwtSecret }) {
+export function createApp({
+  clientUrl,
+  checkDatabase,
+  database,
+  jwtSecret,
+  trustProxyHops = 0,
+}) {
   const app = express();
+  if (trustProxyHops > 0) app.set('trust proxy', trustProxyHops);
 
   app.use(helmet());
   app.use(cors({ origin: clientUrl }));
