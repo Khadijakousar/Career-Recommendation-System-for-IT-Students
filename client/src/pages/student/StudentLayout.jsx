@@ -6,6 +6,7 @@ const navigation = [
   ['/profile', 'Profile'],
   ['/assessment/skills', 'Skills'],
   ['/assessment/interests', 'Interests'],
+  ['/recommendations', 'Recommendations'],
 ];
 
 export default function StudentLayout() {

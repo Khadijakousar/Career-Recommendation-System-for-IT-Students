@@ -193,6 +193,7 @@ model RecommendationResult {
   id            String @id @default(cuid())
   runId         String
   careerId      String
+  careerTitle   String
   skillScore    Float
   interestScore Float
   totalScore    Float

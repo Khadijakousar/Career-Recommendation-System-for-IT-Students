@@ -1,6 +1,6 @@
 # Career Recommendation System for IT Students
 
-A university final-year project to help IT students compare career paths, identify skill gaps, and plan what to learn. Career recommendations will use rule-based matching based on the student's skill ratings and interests.
+A university final-year project to help IT students compare career paths, identify skill gaps, and plan what to learn. Career recommendations use rule-based matching based on the student's skill ratings and interests.
 
 ## Local setup
 
@@ -60,6 +60,12 @@ Sign in with the seeded admin account to open `/admin`. Manage careers, skills, 
 
 Use the student dashboard to open the academic profile, skills assessment, or interest assessment. CGPA and completed courses are optional. Save a level for every listed skill, including zero for skills you have yet to learn. The interest questionnaire shows one question at a time and keeps earlier selections when moving back. Saved profile details, ratings, and answers are loaded when you return.
 
+## Career recommendations
+
+Save skill ratings, then select **Generate matches** on the recommendations page. The score combines 60% weighted skill coverage and 40% normalized interest points when every current question has a valid answer. An incomplete or empty questionnaire uses the skill score alone. Results are ranked by total score, then skill score, then career title.
+
+Each run saves the career title, scores, rank, and scoring mode. The latest run reloads when you return, and catalog edits apply to new runs.
+
 ## Checks
 
 | Folder | Commands |
@@ -67,6 +73,6 @@ Use the student dashboard to open the academic profile, skills assessment, or in
 | `client/` | `npm run lint`, `npm run format:check`, `npm run build` |
 | `server/` | `npm run lint`, `npm run format:check`, `npm run build`, `npm test` |
 
-The server tests cover health, authentication, admin access and validation, and student access and validation. They use test data in memory. To check the live database connection, use the browser or the curl command above.
+The server tests cover health, authentication, admin and student access and validation, and recommendation scoring. They use test data in memory. To check the live database connection, use the browser or the curl command above.
 
 See [plan.md](plan.md) for the architecture, scope, and implementation phases.

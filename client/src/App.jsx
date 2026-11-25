@@ -8,6 +8,7 @@ import RegisterPage from './pages/auth/RegisterPage.jsx';
 import SetupPage from './pages/SetupPage.jsx';
 import InterestAssessmentPage from './pages/student/InterestAssessmentPage.jsx';
 import ProfilePage from './pages/student/ProfilePage.jsx';
+import RecommendationsPage from './pages/student/RecommendationsPage.jsx';
 import SkillsAssessmentPage from './pages/student/SkillsAssessmentPage.jsx';
 import StudentHome from './pages/student/StudentHome.jsx';
 import StudentLayout from './pages/student/StudentLayout.jsx';
@@ -40,6 +41,10 @@ export default function App() {
                 <Route
                   path="/assessment/interests"
                   element={<InterestAssessmentPage />}
+                />
+                <Route
+                  path="/recommendations"
+                  element={<RecommendationsPage />}
                 />
               </Route>
             </Route>

@@ -26,7 +26,7 @@ Build a university final-year project that helps IT students choose a career, un
 - `Career` belongs to an `InterestArea`. `CareerSkill` links careers to skills with required levels and importance weights. `Resource` links a learning URL to a skill.
 - `InterestQuestion`, `InterestOption`, and `InterestOptionWeight` define the questionnaire. `InterestAnswer` stores one choice per student per question.
 - A saved skill level of 0 is a rating. The interest assessment is complete when every current question has a valid answer. An empty questionnaire uses skill-only scoring.
-- `RecommendationRun` and `RecommendationResult` store each dated ranking. `Roadmap` stores a student's plan for one career, and `RoadmapStep` stores each skill's levels, order, and status.
+- `RecommendationRun` and `RecommendationResult` store each dated ranking with the career titles and scores used for that run. `Roadmap` stores a student's plan for one career, and `RoadmapStep` stores each skill's levels, order, and status.
 - Each recommendation run records whether it used skills alone or skills and interests. PostgreSQL restricts catalog deletes that would remove student history. Phase 3 will report blocked deletes as HTTP 409.
 - The recommendation service loads the student's assessments and catalog, then passes plain data to a pure engine. The score uses 60% weighted skill coverage and 40% normalized interest match, with a skill-only fallback. Rank by total score, then skill score, then career title. Save the run and results together.
 - Gap priority equals skill importance multiplied by missing levels. Roadmaps sort by learning stage and then priority. Regeneration retains the statuses of remaining steps. Rating updates after finishing a step require student confirmation.
@@ -52,6 +52,7 @@ Build a university final-year project that helps IT students choose a career, un
 - Phase 2 is implemented and verified. Both migrations applied to an empty local database, and an upgrade preserved the Phase 1 test accounts. Two seed runs produced identical rows. The seeded admin could sign in, catalog deletion guards protected student history, and all 59 distinct resource URLs returned HTTP 2xx.
 - Phase 3 is implemented and verified. Chrome verified career creation and skill mapping, questionnaire edits, resource filtering and deletion, and student redirects at desktop and 360px widths. Live PostgreSQL checks verified protected deletes and transactional updates. All 16 backend tests passed, including student denial on all 27 admin routes.
 - Phase 4 is implemented and verified. Chrome verified profile and assessment saves, reloads, and visible validation at desktop and 360px widths. A live API check with two students verified ownership, atomic saves, and that question responses omit option weights. All 24 backend tests passed.
+- Phase 5 is implemented and verified. All 35 backend tests passed. The local API checks verified both scoring modes, student isolation, empty runs, and that renaming a career leaves past results intact. Chrome verified the highlights, scoring breakdown, and saved results at desktop and 360px widths.
 
 ## Working agreement
 

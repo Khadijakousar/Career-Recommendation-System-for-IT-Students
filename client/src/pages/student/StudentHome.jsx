@@ -17,13 +17,18 @@ const tasks = [
     'Interest assessment',
     'Choose the answers that best reflect what you enjoy.',
   ],
+  [
+    '/recommendations',
+    'Career recommendations',
+    'See which careers match your assessments.',
+  ],
 ];
 
 export default function StudentHome() {
   return (
     <StudentPage
       title="Student dashboard"
-      description="Open your profile or either assessment to enter and update your answers."
+      description="Manage your profile, update your assessments, and view career recommendations."
     >
       <ul className="divide-y divide-line border-y border-line">
         {tasks.map(([path, title, description]) => (
