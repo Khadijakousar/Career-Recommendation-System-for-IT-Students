@@ -20,6 +20,11 @@ if (!jwtSecret || Buffer.byteLength(jwtSecret) < 32) {
 if (!/^\d+$/.test(proxyHops) || !Number.isSafeInteger(trustProxyHops)) {
   throw new Error('Set TRUST_PROXY_HOPS to a non-negative integer.');
 }
+if (process.env.RENDER === 'true' && trustProxyHops === 0) {
+  console.warn(
+    'TRUST_PROXY_HOPS is 0 on Render. Authentication clients may share a rate limit until the verified proxy hop count is configured.',
+  );
+}
 
 const database = createDatabase(databaseUrl);
 const app = createApp({
