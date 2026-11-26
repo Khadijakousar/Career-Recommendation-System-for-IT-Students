@@ -62,6 +62,16 @@ The API signs seven-day JWTs. The browser stores the token in `localStorage` to 
 
 Sign in with the seeded admin account to open `/admin`. Manage careers, skills, interest areas, questions and answer weights, and learning resources from the catalog navigation. Use **Skills** on a career row to set its required skills, levels, and importance. The API blocks catalog changes that would delete saved student history.
 
+### Admin handoff
+
+A maintainer with database access can hand over the admin role from `server/`. Apply the migrations and deploy the API version that enforces account retirement first.
+
+1. Run `npm run admin:provision` with `DATABASE_URL`, `ADMIN_NAME`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` in the process environment. Use the incoming admin's name and an unused email. The password must be at least eight characters and at most 72 UTF-8 bytes. Enter secrets using a hidden shell prompt or a secret manager.
+2. Have the incoming admin sign in, open `/admin`, and use **Change password** to set a private password. Confirm they can sign back in before retiring the outgoing account.
+3. Run `npm run admin:retire` with `DATABASE_URL` and the outgoing `ADMIN_EMAIL`. This disables the account, revokes its sessions, and preserves the account record. The command requires another active admin. Use an active admin email if you reseed the catalog later.
+
+Manage GitHub, Render, Vercel, and Neon access separately in each service.
+
 ## Student profile and assessments
 
 Use the student dashboard to open the academic profile, skills assessment, or interest assessment. CGPA and completed courses are optional. Save a level for every listed skill, including zero for skills you have yet to learn. The interest questionnaire shows one question at a time and keeps earlier selections when moving back. Saved profile details, ratings, and answers are loaded when you return.

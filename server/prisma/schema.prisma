@@ -41,6 +41,7 @@ model User {
   sessionVersion Int      @default(0)
   role           Role     @default(STUDENT)
   createdAt      DateTime @default(now())
+  disabledAt     DateTime?
 
   profile            StudentProfile?
   skills             StudentSkill[]

@@ -12,9 +12,11 @@
     "build": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "prisma db seed",
+    "admin:provision": "node scripts/manage-admin.js provision",
+    "admin:retire": "node scripts/manage-admin.js retire",
     "lint": "eslint .",
     "test": "vitest run",
-    "format:check": "prettier --check src tests prisma/seed.js prisma/seed-data prisma.config.js eslint.config.js package.json"
+    "format:check": "prettier --check src tests scripts prisma/seed.js prisma/seed-data prisma.config.js eslint.config.js package.json"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.1",

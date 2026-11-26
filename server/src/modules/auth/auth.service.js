@@ -31,14 +31,14 @@ export function createAuthService({ database, jwtSecret }) {
     async login({ email, password }) {
       const record = await database.user.findUnique({
         where: { email },
-        select: { ...sessionUserFields, passwordHash: true },
+        select: { ...sessionUserFields, passwordHash: true, disabledAt: true },
       });
 
       const passwordMatches = await bcrypt.compare(
         password,
         record?.passwordHash ?? missingUserHash,
       );
-      if (!record || !passwordMatches) {
+      if (!record || !passwordMatches || record.disabledAt) {
         throw new HttpError(401, 'Invalid email or password');
       }
 
@@ -54,14 +54,14 @@ export function createAuthService({ database, jwtSecret }) {
 
     getUser(id) {
       return database.user.findUnique({
-        where: { id },
+        where: { id, disabledAt: null },
         select: sessionUserFields,
       });
     },
 
     async changePassword(id, sessionVersion, { currentPassword, newPassword }) {
       const record = await database.user.findUnique({
-        where: { id, sessionVersion },
+        where: { id, sessionVersion, disabledAt: null },
         select: { passwordHash: true },
       });
       if (!record) throw new HttpError(401, 'Invalid or expired session');
@@ -73,7 +73,12 @@ export function createAuthService({ database, jwtSecret }) {
 
       const passwordHash = await bcrypt.hash(newPassword, passwordCost);
       const { count } = await database.user.updateMany({
-        where: { id, sessionVersion, passwordHash: record.passwordHash },
+        where: {
+          id,
+          sessionVersion,
+          passwordHash: record.passwordHash,
+          disabledAt: null,
+        },
         data: { passwordHash, sessionVersion: { increment: 1 } },
       });
       if (count === 0) throw new HttpError(401, 'Invalid or expired session');
