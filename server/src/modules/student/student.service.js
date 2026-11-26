@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+import { Prisma } from '../../generated/prisma/client.ts';
 import { HttpError } from '../../middleware/errorHandler.js';
 
 const profileFields = {
@@ -22,7 +24,9 @@ export function createStudentService(database) {
         isolationLevel: 'Serializable',
       });
     } catch (error) {
-      if (error.code === 'P2034' || error.code === 'P2003') {
+      const writeConflict =
+        error.code === 'P2010' && ['40001', '23503'].includes(error.meta?.code);
+      if (writeConflict || error.code === 'P2034' || error.code === 'P2003') {
         throw new HttpError(
           409,
           'The assessment changed while you were saving. Try again.',
@@ -95,13 +99,15 @@ export function createStudentService(database) {
         });
         if (Object.keys(fields).length)
           throw new HttpError(400, 'Invalid skill ratings', fields);
-        for (const { skillId, level } of ratings) {
-          await tx.studentSkill.upsert({
-            where: { userId_skillId: { userId, skillId } },
-            create: { userId, skillId, level },
-            update: { level },
-          });
-        }
+        const rows = ratings.map(
+          ({ skillId, level }) =>
+            Prisma.sql`(${randomUUID()}, ${userId}, ${skillId}, ${level})`,
+        );
+        await tx.$executeRaw`
+          INSERT INTO "StudentSkill" ("id", "userId", "skillId", "level")
+          VALUES ${Prisma.join(rows)}
+          ON CONFLICT ("userId", "skillId") DO UPDATE SET "level" = EXCLUDED."level"
+        `;
         return tx.studentSkill.findMany({
           where: { userId },
           select: ratingFields,
@@ -147,13 +153,15 @@ export function createStudentService(database) {
         });
         if (Object.keys(fields).length)
           throw new HttpError(400, 'Invalid questionnaire answers', fields);
-        for (const { questionId, optionId } of answers) {
-          await tx.interestAnswer.upsert({
-            where: { userId_questionId: { userId, questionId } },
-            create: { userId, questionId, optionId },
-            update: { optionId },
-          });
-        }
+        const rows = answers.map(
+          ({ questionId, optionId }) =>
+            Prisma.sql`(${randomUUID()}, ${userId}, ${questionId}, ${optionId})`,
+        );
+        await tx.$executeRaw`
+          INSERT INTO "InterestAnswer" ("id", "userId", "questionId", "optionId")
+          VALUES ${Prisma.join(rows)}
+          ON CONFLICT ("userId", "questionId") DO UPDATE SET "optionId" = EXCLUDED."optionId"
+        `;
         return tx.interestAnswer.findMany({
           where: { userId },
           select: answerFields,
