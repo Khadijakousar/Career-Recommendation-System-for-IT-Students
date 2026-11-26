@@ -17,6 +17,7 @@ const password = z
 export const accountPassword = password.min(8, 'Use at least 8 characters');
 export const accountName = z.string().trim().min(1, 'Enter your name').max(100);
 const confirmPassword = z.string().min(1, 'Confirm your password');
+const emailToken = z.string().regex(/^[a-f0-9]{64}$/);
 
 const emptyObject = z.strictObject({});
 
@@ -25,39 +26,42 @@ function requestSchema(body) {
 }
 
 export const registerSchema = requestSchema(
-  z
-    .strictObject({
-      name: accountName,
-      email: accountEmail,
-      password: accountPassword,
-      confirmPassword,
-    })
-    .refine((body) => body.password === body.confirmPassword, {
-      path: ['confirmPassword'],
-      message: 'Passwords must match',
-    }),
+  z.strictObject({ email: accountEmail }),
 );
 
 export const loginSchema = requestSchema(
   z.strictObject({ email: accountEmail, password }),
 );
 export const meSchema = requestSchema(z.undefined());
+export const requestVerificationSchema = requestSchema(emptyObject.optional());
+export const verifyEmailSchema = requestSchema(
+  z.strictObject({ token: emailToken, password }),
+);
 
 export const forgotPasswordSchema = requestSchema(
   z.strictObject({ email: accountEmail }),
 );
 
-export const resetPasswordSchema = requestSchema(
-  z
+function linkPasswordSchema(fields) {
+  return z
     .strictObject({
-      token: z.string().regex(/^[a-f0-9]{64}$/),
+      token: emailToken,
       newPassword: accountPassword,
       confirmPassword,
+      ...fields,
     })
-    .refine((body) => body.newPassword === body.confirmPassword, {
-      path: ['confirmPassword'],
-      message: 'Passwords must match',
-    }),
+    .refine(
+      ({ newPassword, confirmPassword }) => newPassword === confirmPassword,
+      {
+        path: ['confirmPassword'],
+        message: 'Passwords must match',
+      },
+    );
+}
+
+export const resetPasswordSchema = requestSchema(linkPasswordSchema());
+export const completeSignupSchema = requestSchema(
+  linkPasswordSchema({ name: accountName }),
 );
 
 export const changePasswordSchema = requestSchema(

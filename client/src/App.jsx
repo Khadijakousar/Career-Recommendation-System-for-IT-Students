@@ -4,10 +4,12 @@ import AdminLayout from './pages/admin/AdminLayout.jsx';
 import AdminHome from './pages/admin/AdminHome.jsx';
 import CatalogPage from './pages/admin/CatalogPage.jsx';
 import ChangePasswordPage from './pages/auth/ChangePasswordPage.jsx';
+import CompleteSignupPage from './pages/auth/CompleteSignupPage.jsx';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage.jsx';
 import LoginPage from './pages/auth/LoginPage.jsx';
 import RegisterPage from './pages/auth/RegisterPage.jsx';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage.jsx';
+import VerifyEmailPage from './pages/auth/VerifyEmailPage.jsx';
 import SetupPage from './pages/SetupPage.jsx';
 import CareerDetailPage from './pages/student/CareerDetailPage.jsx';
 import CareerListPage from './pages/student/CareerListPage.jsx';
@@ -43,9 +45,11 @@ export default function App() {
         <Route element={<SessionGate />}>
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route element={<PublicAuthRoute />}>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/complete-signup" element={<CompleteSignupPage />} />
           </Route>
           <Route element={<ProtectedRoute />}>
             <Route element={<RoleRoute role="STUDENT" />}>

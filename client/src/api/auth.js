@@ -4,6 +4,18 @@ export function register(body) {
   return request('auth/register', { method: 'POST', body });
 }
 
+export function completeSignup(body) {
+  return request('auth/complete-signup', { method: 'POST', body });
+}
+
+export function requestEmailVerification(token) {
+  return request('auth/email-verification', { method: 'POST', token });
+}
+
+export function verifyEmail(body) {
+  return request('auth/verify-email', { method: 'POST', body });
+}
+
 export function login(body) {
   return request('auth/login', { method: 'POST', body });
 }

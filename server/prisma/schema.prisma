@@ -34,14 +34,15 @@ enum StepStatus {
 }
 
 model User {
-  id             String    @id @default(cuid())
-  name           String
-  email          String    @unique
-  passwordHash   String
-  sessionVersion Int       @default(0)
-  role           Role      @default(STUDENT)
-  createdAt      DateTime  @default(now())
-  disabledAt     DateTime?
+  id              String    @id @default(cuid())
+  name            String
+  email           String    @unique
+  passwordHash    String
+  sessionVersion  Int       @default(0)
+  role            Role      @default(STUDENT)
+  createdAt       DateTime  @default(now())
+  disabledAt      DateTime?
+  emailVerifiedAt DateTime?
 
   passwordResetHash      String?   @unique
   passwordResetExpiresAt DateTime?
@@ -51,6 +52,13 @@ model User {
   interestAnswers    InterestAnswer[]
   recommendationRuns RecommendationRun[]
   roadmaps           Roadmap[]
+}
+
+model EmailVerification {
+  email     String   @id
+  purpose   String
+  tokenHash String   @unique
+  expiresAt DateTime
 }
 
 model StudentProfile {

@@ -1,20 +1,23 @@
-import { createHash, randomBytes } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { HttpError } from '../../middleware/errorHandler.js';
+import { hashEmailToken } from './email-verification.service.js';
 
 const passwordCost = 10;
-const publicUserFields = { id: true, name: true, email: true, role: true };
+const publicUserFields = {
+  id: true,
+  name: true,
+  email: true,
+  role: true,
+  emailVerifiedAt: true,
+};
 const sessionUserFields = { ...publicUserFields, sessionVersion: true };
 // Run the same bcrypt comparison when the email does not exist.
 const missingUserHash =
   '$2b$10$vCBaWyb/yL0CjSlcePa5VecQSZ/c8SuVUWs9k/J250BXFoGBMXJSW';
 const resetLifetimeMs = 30 * 60 * 1000;
 const resetCooldownMs = 60 * 1000;
-
-function hashResetToken(token) {
-  return createHash('sha256').update(token).digest('hex');
-}
 
 function updatePassword(passwordHash) {
   return {
@@ -25,25 +28,8 @@ function updatePassword(passwordHash) {
   };
 }
 
-export function createAuthService({ database, jwtSecret, sendPasswordReset }) {
+export function createAuthService({ database, jwtSecret, sendAccountEmail }) {
   return {
-    async register({ name, email, password }) {
-      const passwordHash = await bcrypt.hash(password, passwordCost);
-
-      try {
-        return await database.user.create({
-          data: { name, email, passwordHash, role: 'STUDENT' },
-          select: publicUserFields,
-        });
-      } catch (error) {
-        if (error.code === 'P2002') {
-          const message = 'An account already exists for this email';
-          throw new HttpError(409, message, { email: message });
-        }
-        throw error;
-      }
-    },
-
     async login({ email, password }) {
       const record = await database.user.findUnique({
         where: { email },
@@ -58,14 +44,17 @@ export function createAuthService({ database, jwtSecret, sendPasswordReset }) {
         throw new HttpError(401, 'Invalid email or password');
       }
 
-      const { id, name, role, sessionVersion } = record;
+      const { id, name, role, emailVerifiedAt, sessionVersion } = record;
       const token = jwt.sign({ sessionVersion }, jwtSecret, {
         algorithm: 'HS256',
         subject: id,
         expiresIn: '7d',
       });
 
-      return { user: { id, name, email: record.email, role }, token };
+      return {
+        user: { id, name, email: record.email, role, emailVerifiedAt },
+        token,
+      };
     },
 
     getUser(id) {
@@ -107,6 +96,7 @@ export function createAuthService({ database, jwtSecret, sendPasswordReset }) {
         where: {
           email,
           disabledAt: null,
+          emailVerifiedAt: { not: null },
           OR: [
             { passwordResetExpiresAt: null },
             {
@@ -117,19 +107,20 @@ export function createAuthService({ database, jwtSecret, sendPasswordReset }) {
           ],
         },
         data: {
-          passwordResetHash: hashResetToken(token),
+          passwordResetHash: hashEmailToken(token),
           passwordResetExpiresAt: new Date(expiresAt),
         },
       });
-      if (count > 0) await sendPasswordReset(email, token);
+      if (count > 0) await sendAccountEmail(email, token, 'reset');
     },
 
     async resetPassword({ token, newPassword }) {
-      const passwordResetHash = hashResetToken(token);
+      const passwordResetHash = hashEmailToken(token);
       const where = {
         passwordResetHash,
         passwordResetExpiresAt: { gt: new Date() },
         disabledAt: null,
+        emailVerifiedAt: { not: null },
       };
       const invalidLink = () =>
         new HttpError(

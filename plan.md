@@ -6,7 +6,7 @@ Build a university final-year project that helps IT students choose a career, un
 
 - Students register and log in, manage an academic profile, complete skills and interest assessments, view ranked careers and career details, generate and track roadmaps, and review progress on a dashboard.
 - Admins manage careers, skills, career requirements, interest areas, questions, option weights, and links to resources. Public signup creates student accounts. The first admin comes from the seed.
-- Signup follows SRS FR001 and UC001. Validate that the confirmation matches the password, create the student account, show a success message, and redirect to Login. Issue the JWT after successful login.
+- Student signup adds email confirmation to SRS FR001 and UC001 with the project owner's approval. Students confirm mailbox ownership and then enter their name and password, confirm the password, and return to sign-in. Existing accounts retain sign-in access and can verify their email to enable recovery.
 - Academic information appears on the profile and dashboard. The recommendation score uses skill ratings and interest answers.
 - The scope covers a responsive web app and external learning links. AI, machine learning, counselling bookings, job listings, course hosting, payments, messaging, file uploads, social login, and native apps are outside scope.
 - Use the local [technical specification](docs/PROJECT_SPEC.md) and [university SRS](docs/SRS_Career_Recommendation_System.docx) to verify requirements. The files under `docs/` stay local and must never be staged or pushed.

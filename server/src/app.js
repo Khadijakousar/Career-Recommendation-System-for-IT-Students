@@ -13,7 +13,7 @@ export function createApp({
   checkDatabase,
   database,
   jwtSecret,
-  sendPasswordReset,
+  sendAccountEmail,
   trustProxyHops = 0,
 }) {
   const app = express();
@@ -36,7 +36,7 @@ export function createApp({
   app.use(
     '/api/auth',
     express.json({ limit: '16kb' }),
-    createAuthRouter({ database, jwtSecret, sendPasswordReset }),
+    createAuthRouter({ database, jwtSecret, sendAccountEmail }),
   );
   app.use('/api/admin', createAdminRouter({ database, jwtSecret }));
   app.use(

@@ -1,6 +1,6 @@
 import { createApp } from './app.js';
 import { createDatabase } from './config/database.js';
-import { createPasswordResetSender } from './modules/auth/password-reset-email.js';
+import { createAccountEmailSender } from './modules/auth/account-email.js';
 
 const port = process.env.PORT || 3000;
 const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
@@ -32,7 +32,7 @@ const app = createApp({
   clientUrl,
   database,
   jwtSecret,
-  sendPasswordReset: createPasswordResetSender({
+  sendAccountEmail: createAccountEmailSender({
     apiKey: process.env.RESEND_API_KEY,
     from: process.env.PASSWORD_RESET_FROM,
     clientUrl,
