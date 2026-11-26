@@ -1,49 +1,53 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { register } from '../../api/auth.js';
 import AuthForm from '../../components/AuthForm.jsx';
 import AuthLayout from '../../components/AuthLayout.jsx';
 
 const fields = [
-  { name: 'name', label: 'Full name', autoComplete: 'name' },
   {
     name: 'email',
     label: 'Email address',
     type: 'email',
     autoComplete: 'email',
   },
-  {
-    name: 'password',
-    label: 'Password',
-    type: 'password',
-    autoComplete: 'new-password',
-    hint: 'Use at least 8 characters.',
-  },
-  {
-    name: 'confirmPassword',
-    label: 'Confirm password',
-    type: 'password',
-    autoComplete: 'new-password',
-  },
 ];
 
 export default function RegisterPage() {
-  const navigate = useNavigate();
-
-  async function createAccount(values) {
-    await register(values);
-    navigate('/login', { replace: true, state: { registered: true } });
-  }
+  const [sent, setSent] = useState(false);
 
   return (
     <AuthLayout
       title="Create your student account"
-      description="Use this account to save your assessments and learning progress."
+      description="Confirm your email address to set up your account."
     >
-      <AuthForm
-        fields={fields}
-        submitLabel="Create account"
-        onSubmit={createAccount}
-      />
+      {sent ? (
+        <div className="space-y-4">
+          <p
+            role="status"
+            className="border-l-2 border-accent bg-accent/5 px-3 py-2 text-sm"
+          >
+            Check your inbox for a link to finish signing up. If it doesn’t
+            arrive, check spam or request another link.
+          </p>
+          <button
+            type="button"
+            className="auth-link text-sm"
+            onClick={() => setSent(false)}
+          >
+            Request another link
+          </button>
+        </div>
+      ) : (
+        <AuthForm
+          fields={fields}
+          submitLabel="Send confirmation link"
+          onSubmit={async (values) => {
+            await register(values);
+            setSent(true);
+          }}
+        />
+      )}
       <p className="mt-6 text-sm text-muted">
         Already registered?{' '}
         <Link to="/login" className="auth-link">

@@ -2,7 +2,7 @@ import { once } from 'node:events';
 import bcrypt from 'bcrypt';
 import express from 'express';
 import jwt from 'jsonwebtoken';
-import { afterEach, beforeEach, expect, test } from 'vitest';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { createApp } from '../src/app.js';
 import { authenticate, requireRole } from '../src/middleware/auth.js';
 import { errorHandler } from '../src/middleware/errorHandler.js';
@@ -18,16 +18,32 @@ const student = {
 let accounts;
 let server;
 let baseUrl;
+let messages;
 
 function selectFields(account, fields) {
   if (!account) return null;
+  if (!fields) return { ...account };
   return Object.fromEntries(
     Object.keys(fields).map((field) => [field, account[field]]),
   );
 }
 
+function matches(record, where) {
+  return Object.entries(where).every(([field, condition]) => {
+    const value = record[field] ?? null;
+    if (field === 'OR')
+      return condition.some((clause) => matches(record, clause));
+    if (condition?.gt) return value !== null && value > condition.gt;
+    if (condition?.lte) return value !== null && value <= condition.lte;
+    if (condition?.not === null) return value !== null;
+    return value === condition;
+  });
+}
+
 beforeEach(async () => {
   accounts = new Map();
+  messages = new Map();
+  const verificationLinks = new Map();
   const database = {
     user: {
       async create({ data, select }) {
@@ -45,31 +61,52 @@ beforeEach(async () => {
         return selectFields(account, select);
       },
       async findUnique({ where, select }) {
-        const account = where.email
-          ? accounts.get(where.email)
-          : [...accounts.values()].find(({ id }) => id === where.id);
-        if (
-          where.sessionVersion !== undefined &&
-          account?.sessionVersion !== where.sessionVersion
-        ) {
-          return null;
-        }
+        const account = [...accounts.values()].find((record) =>
+          matches(record, where),
+        );
         return selectFields(account, select);
       },
       async updateMany({ where, data }) {
-        const account = [...accounts.values()].find(
-          ({ id }) => id === where.id,
+        const account = [...accounts.values()].find((record) =>
+          matches(record, where),
         );
-        if (
-          account?.sessionVersion !== where.sessionVersion ||
-          account.passwordHash !== where.passwordHash
-        ) {
-          return { count: 0 };
-        }
-        account.passwordHash = data.passwordHash;
-        account.sessionVersion += data.sessionVersion.increment;
+        if (!account) return { count: 0 };
+        const { sessionVersion, ...fields } = data;
+        Object.assign(account, fields);
+        if (sessionVersion) account.sessionVersion += sessionVersion.increment;
         return { count: 1 };
       },
+    },
+    emailVerification: {
+      async createMany({ data }) {
+        if (verificationLinks.has(data.email)) return { count: 0 };
+        verificationLinks.set(data.email, data);
+        return { count: 1 };
+      },
+      async updateMany({ where, data }) {
+        const record = verificationLinks.get(where.email);
+        if (!record || !matches(record, where)) return { count: 0 };
+        verificationLinks.set(data.email, data);
+        return { count: 1 };
+      },
+      async findUnique({ where }) {
+        return [...verificationLinks.values()].find((record) =>
+          matches(record, where),
+        );
+      },
+      async deleteMany({ where }) {
+        const record = [...verificationLinks.values()].find((entry) =>
+          matches(entry, where),
+        );
+        return {
+          count: Number(
+            record ? verificationLinks.delete(record.email) : false,
+          ),
+        };
+      },
+    },
+    async $transaction(callback) {
+      return callback(database);
     },
   };
   const service = createAuthService({ database, jwtSecret });
@@ -86,6 +123,8 @@ beforeEach(async () => {
       checkDatabase: async () => {},
       database,
       jwtSecret,
+      sendAccountEmail: async (email, token, purpose) =>
+        messages.set(email, { token, purpose }),
     }),
   );
   app.use(errorHandler);
@@ -111,29 +150,50 @@ function request(path, { body, token, method = body ? 'POST' : 'GET' } = {}) {
   });
 }
 
-function register(body = student) {
-  return request('/api/auth/register', { body });
+function requestSignup(email = student.email) {
+  return request('/api/auth/register', { body: { email } });
+}
+
+async function emailToken(email, purpose) {
+  await vi.waitFor(() => expect(messages.get(email)?.purpose).toBe(purpose));
+  return messages.get(email).token;
+}
+
+async function register({ name, email, password, confirmPassword } = student) {
+  const response = await requestSignup(email);
+  if (response.status !== 202) return response;
+  const token = await emailToken(email.trim().toLowerCase(), 'signup');
+  return request('/api/auth/complete-signup', {
+    body: { token, name, newPassword: password, confirmPassword },
+  });
 }
 
 function login(email = student.email, password = student.password) {
   return request('/api/auth/login', { body: { email, password } });
 }
 
-test('signup creates a student with a bcrypt hash and returns only public account data', async () => {
-  const response = await register({
-    ...student,
-    email: ` ${student.email.toUpperCase()} `,
-  });
-  const user = {
-    id: '1',
+test('signup creates a verified student only after a single-use email link and password', async () => {
+  expect((await requestSignup(` ${student.email.toUpperCase()} `)).status).toBe(
+    202,
+  );
+  const token = await emailToken(student.email, 'signup');
+  expect(accounts.size).toBe(0);
+  expect((await login()).status).toBe(401);
+  const body = {
+    token,
     name: student.name,
-    email: student.email,
-    role: 'STUDENT',
+    newPassword: student.password,
+    confirmPassword: student.password,
   };
-
-  expect(response.status).toBe(201);
-  expect(await response.json()).toEqual({ data: { user } });
-  const { passwordHash } = accounts.get(student.email);
+  expect((await request('/api/auth/complete-signup', { body })).status).toBe(
+    204,
+  );
+  expect((await request('/api/auth/complete-signup', { body })).status).toBe(
+    400,
+  );
+  const { passwordHash, role, emailVerifiedAt } = accounts.get(student.email);
+  expect(role).toBe('STUDENT');
+  expect(emailVerifiedAt).toBeInstanceOf(Date);
   expect(bcrypt.getRounds(passwordHash)).toBe(10);
   expect(await bcrypt.compare(student.password, passwordHash)).toBe(true);
 });
@@ -142,7 +202,7 @@ test.each([
   [
     'weak password',
     { password: 'short', confirmPassword: 'short' },
-    'password',
+    'newPassword',
   ],
   [
     'mismatched confirmation',
@@ -152,27 +212,39 @@ test.each([
   [
     'password past the bcrypt byte limit',
     { password: '🙂'.repeat(19), confirmPassword: '🙂'.repeat(19) },
-    'password',
+    'newPassword',
   ],
-  ['invalid email', { email: 'not-an-email' }, 'email'],
   ['submitted admin role', { role: 'ADMIN' }, 'body'],
 ])('signup rejects %s', async (_label, changes, field) => {
-  const response = await register({ ...student, ...changes });
+  await requestSignup();
+  const token = await emailToken(student.email, 'signup');
+  const { password = student.password, ...fields } = changes;
+  const response = await request('/api/auth/complete-signup', {
+    body: {
+      token,
+      name: student.name,
+      newPassword: password,
+      confirmPassword: student.password,
+      ...fields,
+    },
+  });
 
   expect(response.status).toBe(400);
   expect((await response.json()).error.fields[field]).toBeTruthy();
   expect(accounts.size).toBe(0);
 });
 
-test('signup reports duplicate email as a conflict', async () => {
-  expect((await register()).status).toBe(201);
-  const response = await register({
-    ...student,
-    email: student.email.toUpperCase(),
-  });
-
-  expect(response.status).toBe(409);
-  expect((await response.json()).error.fields.email).toBeTruthy();
+test('signup responds identically for existing addresses and rejects malformed email', async () => {
+  expect((await requestSignup('not-an-email')).status).toBe(400);
+  expect((await register()).status).toBe(204);
+  const original = messages.get(student.email);
+  const duplicate = await requestSignup(student.email.toUpperCase());
+  const fresh = await requestSignup('fresh@example.test');
+  expect(duplicate.status).toBe(202);
+  expect(fresh.status).toBe(202);
+  expect(await duplicate.json()).toEqual(await fresh.json());
+  await emailToken('fresh@example.test', 'signup');
+  expect(messages.get(student.email)).toBe(original);
   expect(accounts.size).toBe(1);
 });
 
@@ -208,6 +280,63 @@ test('login gives the same error for unknown email and wrong password', async ()
       error: { message: 'Invalid email or password' },
     });
   }
+});
+
+test('existing accounts keep sign-in access and enable recovery only after email and password confirmation', async () => {
+  accounts.set(student.email, {
+    id: '1',
+    name: student.name,
+    email: student.email,
+    role: 'STUDENT',
+    emailVerifiedAt: null,
+    sessionVersion: 0,
+    passwordHash: await bcrypt.hash(student.password, 10),
+  });
+  const { data: session } = await (await login()).json();
+  const body = { email: student.email };
+  expect((await request('/api/auth/forgot-password', { body })).status).toBe(
+    202,
+  );
+  expect(messages.has(student.email)).toBe(false);
+  expect(
+    (await request('/api/auth/email-verification', { method: 'POST' })).status,
+  ).toBe(401);
+  expect(
+    (
+      await request('/api/auth/email-verification', {
+        method: 'POST',
+        token: session.token,
+      })
+    ).status,
+  ).toBe(202);
+  const token = await emailToken(student.email, 'verify');
+  expect(
+    (
+      await request('/api/auth/verify-email', {
+        body: { token, password: 'incorrect' },
+      })
+    ).status,
+  ).toBe(400);
+  expect(
+    (
+      await request('/api/auth/verify-email', {
+        body: { token, password: student.password },
+      })
+    ).status,
+  ).toBe(204);
+  expect(
+    (
+      await request('/api/auth/verify-email', {
+        body: { token, password: student.password },
+      })
+    ).status,
+  ).toBe(400);
+  const me = await request('/api/auth/me', { token: session.token });
+  expect((await me.json()).data.user.emailVerifiedAt).toBeTruthy();
+  expect((await request('/api/auth/forgot-password', { body })).status).toBe(
+    202,
+  );
+  expect(await emailToken(student.email, 'reset')).not.toBe(token);
 });
 
 test('the current-user endpoint rejects missing, invalid, and expired tokens', async () => {
@@ -337,7 +466,7 @@ test('auth endpoints rate-limit repeated requests', async () => {
   for (let attempt = 0; attempt < 20; attempt += 1) {
     expect((await login('invalid-email')).status).toBe(400);
   }
-  const response = await register();
+  const response = await requestSignup();
   expect(response.status).toBe(429);
   expect(response.headers.has('retry-after')).toBe(true);
 });

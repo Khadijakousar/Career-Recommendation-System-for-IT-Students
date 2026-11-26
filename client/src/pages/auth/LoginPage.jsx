@@ -41,7 +41,12 @@ export default function LoginPage() {
         submitLabel="Sign in"
         onSubmit={async (values) => signIn(await login(values))}
       />
-      <p className="mt-6 text-sm text-muted">
+      <p className="mt-5 text-sm">
+        <Link to="/forgot-password" className="auth-link">
+          Forgot password?
+        </Link>
+      </p>
+      <p className="mt-3 text-sm text-muted">
         New student?{' '}
         <Link to="/register" className="auth-link">
           Create an account
