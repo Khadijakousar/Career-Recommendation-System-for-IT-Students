@@ -1,42 +1,25 @@
 import { expect, test } from 'vitest';
-import {
-  createDashboardService,
-  summarizeSkillGroups,
-} from '../src/modules/dashboard/dashboard.service.js';
+import { createDashboardService } from '../src/modules/dashboard/dashboard.service.js';
 
-const groups = [
-  {
-    category: 'Web',
-    skills: [{ id: 'html' }, { id: 'javascript' }, { id: 'css' }],
-  },
-  { category: 'Data', skills: [{ id: 'sql' }] },
-];
-
-test('skills summary counts zero ratings and excludes unrated skills from the average', () => {
-  expect(
-    summarizeSkillGroups(groups, [
-      { skillId: 'html', level: 0 },
-      { skillId: 'javascript', level: 5 },
-    ]),
-  ).toEqual([
-    { category: 'Web', ratedCount: 2, totalCount: 3, averageLevel: 2.5 },
-    { category: 'Data', ratedCount: 0, totalCount: 1, averageLevel: null },
-  ]);
-});
+function dashboardService(snapshot, userId = 'student') {
+  return createDashboardService({
+    async $queryRaw(_query, ...params) {
+      expect(params).toEqual([userId, userId, userId, userId, 3, userId]);
+      return [snapshot];
+    },
+  });
+}
 
 test('an empty catalog has no complete assessments', async () => {
-  const tx = {
-    studentProfile: { findUnique: async () => null },
-    skill: { findMany: async () => [] },
-    studentSkill: { findMany: async () => [] },
-    interestQuestion: { count: async () => 0 },
-    interestAnswer: { count: async () => 0 },
-    recommendationRun: { findFirst: async () => null },
-    roadmap: { findMany: async () => [] },
-  };
-  const database = { $transaction: (operation) => operation(tx) };
-  const result = await createDashboardService(database).get('student');
-  expect(result).toEqual({
+  const service = dashboardService({
+    profile: null,
+    questionCount: 0,
+    answerCount: 0,
+    skillGroups: [],
+    latestRecommendations: null,
+    roadmaps: [],
+  });
+  expect(await service.get('student')).toEqual({
     profile: null,
     profileComplete: false,
     assessments: {
@@ -50,8 +33,8 @@ test('an empty catalog has no complete assessments', async () => {
   });
 });
 
-test('dashboard scopes records to the student, selects three ranked matches, and filters completed roadmaps', async () => {
-  const userId = 'student';
+test('dashboard includes profile, ranked matches, and active roadmaps', async () => {
+  const userId = 'returning-student';
   const profile = {
     program: 'Computing',
     semester: 3,
@@ -60,61 +43,39 @@ test('dashboard scopes records to the student, selects three ranked matches, and
   };
   const latest = {
     id: 'latest',
+    createdAt: '2026-11-26T00:00:00+00:00',
     results: [{ rank: 1 }, { rank: 2 }, { rank: 3 }],
   };
-  const tx = {
-    studentProfile: {
-      async findUnique({ where }) {
-        expect(where).toEqual({ userId });
-        return profile;
-      },
+  const service = dashboardService(
+    {
+      profile,
+      questionCount: 2,
+      answerCount: 1,
+      skillGroups: [
+        { category: 'Data', ratedCount: 0, totalCount: 1, averageLevel: null },
+        { category: 'Web', ratedCount: 2, totalCount: 2, averageLevel: 2.5 },
+      ],
+      latestRecommendations: latest,
+      roadmaps: [
+        {
+          id: 'active',
+          steps: [{ status: 'DONE' }, { status: 'IN_PROGRESS' }],
+        },
+        { id: 'finished', steps: [{ status: 'DONE' }] },
+        { id: 'empty', steps: [] },
+      ],
     },
-    skill: { findMany: async () => [{ id: 'html', category: 'Web' }] },
-    studentSkill: {
-      async findMany({ where }) {
-        expect(where).toEqual({ userId });
-        return [{ skillId: 'html', level: 0 }];
-      },
-    },
-    interestQuestion: { count: async () => 2 },
-    interestAnswer: {
-      async count({ where }) {
-        expect(where).toEqual({ userId });
-        return 1;
-      },
-    },
-    recommendationRun: {
-      async findFirst({ where, orderBy, select }) {
-        expect(where).toEqual({ userId });
-        expect(orderBy[0]).toEqual({ createdAt: 'desc' });
-        expect(select.results).toMatchObject({
-          take: 3,
-          orderBy: { rank: 'asc' },
-        });
-        return latest;
-      },
-    },
-    roadmap: {
-      async findMany({ where }) {
-        expect(where).toEqual({ userId });
-        return [
-          {
-            id: 'active',
-            steps: [{ status: 'DONE' }, { status: 'IN_PROGRESS' }],
-          },
-          { id: 'finished', steps: [{ status: 'DONE' }] },
-          { id: 'empty', steps: [] },
-        ];
-      },
-    },
-  };
-  const database = { $transaction: (operation) => operation(tx) };
-  const result = await createDashboardService(database).get(userId);
+    userId,
+  );
+  const result = await service.get(userId);
   expect(result.profileComplete).toBe(true);
   expect(result.profile).toEqual(profile);
-  expect(result.latestRecommendations).toEqual(latest);
+  expect(result.latestRecommendations).toEqual({
+    ...latest,
+    createdAt: new Date('2026-11-26T00:00:00.000Z'),
+  });
   expect(result.assessments).toEqual({
-    skills: { completedCount: 1, totalCount: 1, complete: true },
+    skills: { completedCount: 2, totalCount: 3, complete: false },
     interests: { completedCount: 1, totalCount: 2, complete: false },
   });
   expect(result.savedRoadmapCount).toBe(3);
