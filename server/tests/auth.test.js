@@ -222,3 +222,45 @@ test('auth endpoints rate-limit repeated requests', async () => {
   expect(response.status).toBe(429);
   expect(response.headers.has('retry-after')).toBe(true);
 });
+
+test('authentication limits stay separate for clients behind a trusted proxy', async () => {
+  const proxiedServer = createApp({ trustProxyHops: 1 }).listen(0, '127.0.0.1');
+  await once(proxiedServer, 'listening');
+  const authUrl = `http://127.0.0.1:${proxiedServer.address().port}/api/auth`;
+
+  function attempt(path, clientIp) {
+    return fetch(`${authUrl}/${path}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Forwarded-For': clientIp,
+      },
+      body: '{}',
+    });
+  }
+
+  try {
+    const firstClient = '192.0.2.1';
+    const secondClient = '192.0.2.2';
+    for (let count = 0; count < 20; count += 1) {
+      const endpoint = count % 2 === 0 ? 'login' : 'register';
+      const response = await attempt(endpoint, firstClient);
+      expect(response.status).toBe(400);
+      await response.body.cancel();
+    }
+
+    const blocked = await attempt('login', firstClient);
+    expect(blocked.status).toBe(429);
+    await blocked.body.cancel();
+
+    const allowed = await attempt('login', secondClient);
+    expect(allowed.status).toBe(400);
+    expect(allowed.headers.get('ratelimit')).toContain('r=19');
+    expect(allowed.headers.get('ratelimit-policy')).not.toBe(
+      blocked.headers.get('ratelimit-policy'),
+    );
+    await allowed.body.cancel();
+  } finally {
+    await new Promise((resolve) => proxiedServer.close(resolve));
+  }
+});
