@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const email = z
+export const accountEmail = z
   .string()
   .trim()
   .toLowerCase()
@@ -14,7 +14,8 @@ const password = z
     (value) => Buffer.byteLength(value, 'utf8') <= 72,
     'Password must be 72 bytes or fewer',
   );
-const newPassword = password.min(8, 'Use at least 8 characters');
+export const accountPassword = password.min(8, 'Use at least 8 characters');
+export const accountName = z.string().trim().min(1, 'Enter your name').max(100);
 const confirmPassword = z.string().min(1, 'Confirm your password');
 
 const emptyObject = z.strictObject({});
@@ -26,9 +27,9 @@ function requestSchema(body) {
 export const registerSchema = requestSchema(
   z
     .strictObject({
-      name: z.string().trim().min(1, 'Enter your name').max(100),
-      email,
-      password: newPassword,
+      name: accountName,
+      email: accountEmail,
+      password: accountPassword,
       confirmPassword,
     })
     .refine((body) => body.password === body.confirmPassword, {
@@ -37,12 +38,18 @@ export const registerSchema = requestSchema(
     }),
 );
 
-export const loginSchema = requestSchema(z.strictObject({ email, password }));
+export const loginSchema = requestSchema(
+  z.strictObject({ email: accountEmail, password }),
+);
 export const meSchema = requestSchema(z.undefined());
 
 export const changePasswordSchema = requestSchema(
   z
-    .strictObject({ currentPassword: password, newPassword, confirmPassword })
+    .strictObject({
+      currentPassword: password,
+      newPassword: accountPassword,
+      confirmPassword,
+    })
     .refine((body) => body.newPassword === body.confirmPassword, {
       path: ['confirmPassword'],
       message: 'Passwords must match',

@@ -56,11 +56,16 @@ async function seed() {
             role: 'ADMIN',
           },
           update: {},
-          select: { role: true },
+          select: { role: true, disabledAt: true },
         });
         if (admin.role !== 'ADMIN') {
           throw new SeedError(
             'ADMIN_EMAIL belongs to a student. Use a different email for the administrator.',
+          );
+        }
+        if (admin.disabledAt) {
+          throw new SeedError(
+            'ADMIN_EMAIL belongs to a retired administrator. Use an active administrator for reseeding.',
           );
         }
 
