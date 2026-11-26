@@ -20,17 +20,20 @@ const fields = [
 ];
 
 export default function LoginPage() {
-  const { signIn } = useAuth();
+  const { passwordChanged, signIn } = useAuth();
   const { state } = useLocation();
+  const confirmation = passwordChanged
+    ? 'Your password changed. Sign in with your new password.'
+    : state?.registered && 'Your account is ready. Sign in to get started.';
 
   return (
     <AuthLayout title="Sign in" description="Use your email and password.">
-      {state?.registered && (
+      {confirmation && (
         <p
           role="status"
           className="mb-5 border-l-2 border-accent bg-accent/5 px-3 py-2 text-sm text-accent"
         >
-          Your account is ready. Sign in to get started.
+          {confirmation}
         </p>
       )}
       <AuthForm

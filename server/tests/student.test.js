@@ -16,7 +16,11 @@ beforeAll(async () => {
   const database = {
     user: {
       async findUnique({ where: { id } }) {
-        return { id, role: id === 'admin' ? 'ADMIN' : 'STUDENT' };
+        return {
+          id,
+          role: id === 'admin' ? 'ADMIN' : 'STUDENT',
+          sessionVersion: 0,
+        };
       },
     },
     studentProfile: {

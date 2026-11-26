@@ -3,6 +3,7 @@ import { AuthProvider } from './context/AuthContext.jsx';
 import AdminLayout from './pages/admin/AdminLayout.jsx';
 import AdminHome from './pages/admin/AdminHome.jsx';
 import CatalogPage from './pages/admin/CatalogPage.jsx';
+import ChangePasswordPage from './pages/auth/ChangePasswordPage.jsx';
 import LoginPage from './pages/auth/LoginPage.jsx';
 import RegisterPage from './pages/auth/RegisterPage.jsx';
 import SetupPage from './pages/SetupPage.jsx';
@@ -63,11 +64,19 @@ export default function App() {
                 <Route path="/careers/:slug" element={<CareerDetailPage />} />
                 <Route path="/roadmaps" element={<RoadmapListPage />} />
                 <Route path="/roadmaps/:id" element={<RoadmapPage />} />
+                <Route
+                  path="/account/password"
+                  element={<ChangePasswordPage />}
+                />
               </Route>
             </Route>
             <Route element={<RoleRoute role="ADMIN" />}>
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<AdminHome />} />
+                <Route
+                  path="account/password"
+                  element={<ChangePasswordPage />}
+                />
                 <Route path=":section" element={<CatalogPage />} />
               </Route>
             </Route>

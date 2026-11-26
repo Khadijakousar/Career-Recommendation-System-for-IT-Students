@@ -25,6 +25,9 @@ export default function StudentLayout() {
           </NavLink>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
             <span className="wrap-anywhere text-muted">{user.name}</span>
+            <NavLink to="/account/password" className="auth-link">
+              Change password
+            </NavLink>
             <button type="button" className="auth-link" onClick={signOut}>
               Sign out
             </button>

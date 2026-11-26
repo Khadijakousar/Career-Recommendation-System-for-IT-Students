@@ -11,3 +11,7 @@ export function login(body) {
 export function getCurrentUser(token, signal) {
   return request('auth/me', { token, signal });
 }
+
+export function changePassword(token, body) {
+  return request('auth/password', { method: 'PUT', token, body });
+}
