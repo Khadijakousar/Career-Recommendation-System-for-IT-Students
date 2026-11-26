@@ -16,6 +16,19 @@ const seedEnvironment = z.object({
 
 class SeedError extends Error {}
 
+const seedFailureMessages = {
+  P1000: 'Check the username and password in DATABASE_URL.',
+  P1001: 'The database could not be reached. Check the host and connection.',
+  P1002: 'The database connection timed out. Check the host and try again.',
+  P2002: 'A starter record conflicts with an existing catalog entry.',
+  P2021:
+    'A required table is missing. Apply the migrations to this database first.',
+  P2022:
+    'A required column is missing. Apply the migrations to this database first.',
+  P2028:
+    'The seed transaction failed. Check the database connection and retry.',
+};
+
 const skillId = (key) => `seed-skill-${key}`;
 const areaId = (key) => `seed-area-${key}`;
 
@@ -117,7 +130,7 @@ async function seed() {
           });
         }
       },
-      { timeout: 15000 },
+      { timeout: 120_000 },
     );
 
     console.log('Starter admin and catalog are ready.');
@@ -127,10 +140,14 @@ async function seed() {
 }
 
 seed().catch((error) => {
-  console.error(
-    error instanceof SeedError
-      ? error.message
-      : 'Could not seed the database. Check the connection, migrations, and catalog for conflicting starter records.',
-  );
+  if (error instanceof SeedError) {
+    console.error(error.message);
+  } else {
+    const code = error?.code;
+    const detail = Object.hasOwn(seedFailureMessages, code)
+      ? ` (${code}). ${seedFailureMessages[code]}`
+      : '. Check the connection, migrations, and catalog for conflicting starter records.';
+    console.error(`Could not seed the database${detail}`);
+  }
   process.exitCode = 1;
 });
