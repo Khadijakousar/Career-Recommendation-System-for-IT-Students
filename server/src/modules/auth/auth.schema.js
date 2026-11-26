@@ -43,6 +43,23 @@ export const loginSchema = requestSchema(
 );
 export const meSchema = requestSchema(z.undefined());
 
+export const forgotPasswordSchema = requestSchema(
+  z.strictObject({ email: accountEmail }),
+);
+
+export const resetPasswordSchema = requestSchema(
+  z
+    .strictObject({
+      token: z.string().regex(/^[a-f0-9]{64}$/),
+      newPassword: accountPassword,
+      confirmPassword,
+    })
+    .refine((body) => body.newPassword === body.confirmPassword, {
+      path: ['confirmPassword'],
+      message: 'Passwords must match',
+    }),
+);
+
 export const changePasswordSchema = requestSchema(
   z
     .strictObject({

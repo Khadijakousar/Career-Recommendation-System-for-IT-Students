@@ -15,3 +15,11 @@ export function getCurrentUser(token, signal) {
 export function changePassword(token, body) {
   return request('auth/password', { method: 'PUT', token, body });
 }
+
+export function requestPasswordReset(body) {
+  return request('auth/forgot-password', { method: 'POST', body });
+}
+
+export function resetPassword(body) {
+  return request('auth/reset-password', { method: 'POST', body });
+}

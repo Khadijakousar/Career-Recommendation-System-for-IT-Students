@@ -34,14 +34,17 @@ enum StepStatus {
 }
 
 model User {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   name           String
-  email          String   @unique
+  email          String    @unique
   passwordHash   String
-  sessionVersion Int      @default(0)
-  role           Role     @default(STUDENT)
-  createdAt      DateTime @default(now())
+  sessionVersion Int       @default(0)
+  role           Role      @default(STUDENT)
+  createdAt      DateTime  @default(now())
   disabledAt     DateTime?
+
+  passwordResetHash      String?   @unique
+  passwordResetExpiresAt DateTime?
 
   profile            StudentProfile?
   skills             StudentSkill[]

@@ -6,15 +6,17 @@ import { validate } from '../../middleware/validate.js';
 import { createAuthController } from './auth.controller.js';
 import {
   changePasswordSchema,
+  forgotPasswordSchema,
   loginSchema,
   meSchema,
   registerSchema,
+  resetPasswordSchema,
 } from './auth.schema.js';
 import { createAuthService } from './auth.service.js';
 
-export function createAuthRouter({ database, jwtSecret }) {
+export function createAuthRouter({ database, jwtSecret, sendPasswordReset }) {
   const router = Router();
-  const service = createAuthService({ database, jwtSecret });
+  const service = createAuthService({ database, jwtSecret, sendPasswordReset });
   const controller = createAuthController(service);
   const requireSession = authenticate({ jwtSecret, getUser: service.getUser });
   const rateLimitOptions = {
@@ -26,6 +28,7 @@ export function createAuthRouter({ database, jwtSecret }) {
     },
   };
   const limitAttempts = rateLimit({ ...rateLimitOptions, limit: 20 });
+  const limitRecoveryAttempts = rateLimit({ ...rateLimitOptions, limit: 10 });
   const limitPasswordChanges = rateLimit({
     ...rateLimitOptions,
     limit: 10,
@@ -43,6 +46,26 @@ export function createAuthRouter({ database, jwtSecret }) {
     controller.register,
   );
   router.post('/login', limitAttempts, validate(loginSchema), controller.login);
+  router.post(
+    '/forgot-password',
+    limitRecoveryAttempts,
+    validate(forgotPasswordSchema),
+    (_request, _response, next) => {
+      if (!sendPasswordReset) {
+        return next(
+          new HttpError(503, 'Password recovery is currently unavailable.'),
+        );
+      }
+      return next();
+    },
+    controller.requestPasswordReset,
+  );
+  router.post(
+    '/reset-password',
+    limitRecoveryAttempts,
+    validate(resetPasswordSchema),
+    controller.resetPassword,
+  );
   router.get('/me', requireSession, validate(meSchema), controller.me);
   router.put(
     '/password',

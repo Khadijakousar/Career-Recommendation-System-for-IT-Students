@@ -52,6 +52,8 @@ Public signup creates student accounts. After confirming their password and crea
 
 Students and admins can use **Change password** from their workspace. The current password is required. Saving a new password invalidates all existing sessions for that account.
 
+Students and active admins can choose **Forgot password?** from sign-in. The email link expires after 30 minutes and can be used once. A successful reset signs the account out on all devices. Configure `RESEND_API_KEY` and `PASSWORD_RESET_FROM` on the API to enable sending. Use a sender on a verified domain the client controls, keep click tracking disabled for the sender domain, and set `CLIENT_URL` to the public frontend origin for hosted reset links. [Resend domain setup](https://resend.com/docs/dashboard/domains/introduction)
+
 The API signs seven-day JWTs. The browser stores the token in `localStorage` to restore the session after a refresh. JavaScript on the same origin can read this storage, so an XSS flaw could expose the token. Signing out clears the browser's stored token.
 
 ## Starter data

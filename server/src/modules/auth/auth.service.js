@@ -1,3 +1,4 @@
+import { createHash, randomBytes } from 'node:crypto';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { HttpError } from '../../middleware/errorHandler.js';
@@ -8,8 +9,23 @@ const sessionUserFields = { ...publicUserFields, sessionVersion: true };
 // Run the same bcrypt comparison when the email does not exist.
 const missingUserHash =
   '$2b$10$vCBaWyb/yL0CjSlcePa5VecQSZ/c8SuVUWs9k/J250BXFoGBMXJSW';
+const resetLifetimeMs = 30 * 60 * 1000;
+const resetCooldownMs = 60 * 1000;
 
-export function createAuthService({ database, jwtSecret }) {
+function hashResetToken(token) {
+  return createHash('sha256').update(token).digest('hex');
+}
+
+function updatePassword(passwordHash) {
+  return {
+    passwordHash,
+    sessionVersion: { increment: 1 },
+    passwordResetHash: null,
+    passwordResetExpiresAt: null,
+  };
+}
+
+export function createAuthService({ database, jwtSecret, sendPasswordReset }) {
   return {
     async register({ name, email, password }) {
       const passwordHash = await bcrypt.hash(password, passwordCost);
@@ -79,9 +95,60 @@ export function createAuthService({ database, jwtSecret }) {
           passwordHash: record.passwordHash,
           disabledAt: null,
         },
-        data: { passwordHash, sessionVersion: { increment: 1 } },
+        data: updatePassword(passwordHash),
       });
       if (count === 0) throw new HttpError(401, 'Invalid or expired session');
+    },
+
+    async requestPasswordReset({ email }) {
+      const token = randomBytes(32).toString('hex');
+      const expiresAt = Date.now() + resetLifetimeMs;
+      const { count } = await database.user.updateMany({
+        where: {
+          email,
+          disabledAt: null,
+          OR: [
+            { passwordResetExpiresAt: null },
+            {
+              passwordResetExpiresAt: {
+                lte: new Date(expiresAt - resetCooldownMs),
+              },
+            },
+          ],
+        },
+        data: {
+          passwordResetHash: hashResetToken(token),
+          passwordResetExpiresAt: new Date(expiresAt),
+        },
+      });
+      if (count > 0) await sendPasswordReset(email, token);
+    },
+
+    async resetPassword({ token, newPassword }) {
+      const passwordResetHash = hashResetToken(token);
+      const where = {
+        passwordResetHash,
+        passwordResetExpiresAt: { gt: new Date() },
+        disabledAt: null,
+      };
+      const invalidLink = () =>
+        new HttpError(
+          400,
+          'This reset link is invalid or expired. Request a new link.',
+        );
+
+      const account = await database.user.findUnique({
+        where,
+        select: { id: true },
+      });
+      if (!account) throw invalidLink();
+
+      const passwordHash = await bcrypt.hash(newPassword, passwordCost);
+      const { count } = await database.user.updateMany({
+        where: { ...where, passwordResetExpiresAt: { gt: new Date() } },
+        data: updatePassword(passwordHash),
+      });
+      if (count === 0) throw invalidLink();
     },
   };
 }
