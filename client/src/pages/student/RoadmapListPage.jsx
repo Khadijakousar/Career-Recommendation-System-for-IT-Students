@@ -41,11 +41,11 @@ export default function RoadmapListPage() {
           </ul>
         ) : (
           <p className="border-y border-line py-4 text-muted">
-            No saved roadmaps yet. Open a career from your{' '}
-            <Link to="/recommendations" className="auth-link">
-              recommendations
+            No saved roadmaps yet.{' '}
+            <Link to="/careers" className="auth-link">
+              Browse careers
             </Link>{' '}
-            to generate one.
+            to start one.
           </p>
         )}
       </RemoteStatus>

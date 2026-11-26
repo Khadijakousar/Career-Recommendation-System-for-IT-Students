@@ -81,6 +81,9 @@ function CareerDetails({ career, gap, token }) {
   return (
     <StudentPage title={career.title} description={career.description}>
       <div className="space-y-6">
+        <Link to="/careers" className="auth-link">
+          Browse all careers
+        </Link>
         <p className="text-sm text-muted">
           Interest area · {career.interestArea.name}
         </p>

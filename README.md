@@ -72,6 +72,8 @@ Each run saves the career title, scores, rank, and scoring mode. The latest run 
 
 ## Skill gaps and roadmaps
 
+Use **Careers** in the student navigation to browse the catalog and open career details before taking an assessment.
+
 Open a career from your recommendations to compare your ratings with its requirements. The chart shows the gaps, ordered by missing levels multiplied by skill importance. Generate a roadmap to start with foundation skills and open the learning resources for each step.
 
 Use **Roadmaps** to reopen your plans. Mark steps as done to track progress. After finishing a step, confirm the separate skill rating update if you want your assessment to reflect it. Regenerating a roadmap keeps the status of steps that are still needed.
