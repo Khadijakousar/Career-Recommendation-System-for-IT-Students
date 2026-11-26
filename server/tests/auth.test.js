@@ -36,7 +36,11 @@ beforeEach(async () => {
             code: 'P2002',
           });
         }
-        const account = { ...data, id: String(accounts.size + 1) };
+        const account = {
+          ...data,
+          id: String(accounts.size + 1),
+          sessionVersion: 0,
+        };
         accounts.set(account.email, account);
         return selectFields(account, select);
       },
@@ -44,7 +48,27 @@ beforeEach(async () => {
         const account = where.email
           ? accounts.get(where.email)
           : [...accounts.values()].find(({ id }) => id === where.id);
+        if (
+          where.sessionVersion !== undefined &&
+          account?.sessionVersion !== where.sessionVersion
+        ) {
+          return null;
+        }
         return selectFields(account, select);
+      },
+      async updateMany({ where, data }) {
+        const account = [...accounts.values()].find(
+          ({ id }) => id === where.id,
+        );
+        if (
+          account?.sessionVersion !== where.sessionVersion ||
+          account.passwordHash !== where.passwordHash
+        ) {
+          return { count: 0 };
+        }
+        account.passwordHash = data.passwordHash;
+        account.sessionVersion += data.sessionVersion.increment;
+        return { count: 1 };
       },
     },
   };
@@ -76,12 +100,12 @@ afterEach(async () => {
   });
 });
 
-function request(path, { body, token } = {}) {
+function request(path, { body, token, method = body ? 'POST' : 'GET' } = {}) {
   const headers = {};
   if (body) headers['Content-Type'] = 'application/json';
   if (token) headers.Authorization = `Bearer ${token}`;
   return fetch(`${baseUrl}${path}`, {
-    method: body ? 'POST' : 'GET',
+    method,
     headers,
     body: body ? JSON.stringify(body) : undefined,
   });
@@ -161,12 +185,14 @@ test('login issues a seven-day token and the current-user endpoint returns the p
   expect(response.status).toBe(200);
   expect(response.headers.get('cache-control')).toBe('no-store');
   expect(claims.sub).toBe(data.user.id);
+  expect(claims.sessionVersion).toBe(0);
   expect(claims.exp - claims.iat).toBe(7 * 24 * 60 * 60);
 
   const me = await request('/api/auth/me', { token: data.token });
   expect(me.status).toBe(200);
   expect(await me.json()).toEqual({ data: { user: data.user } });
   expect(data.user).not.toHaveProperty('passwordHash');
+  expect(data.user).not.toHaveProperty('sessionVersion');
 });
 
 test('login gives the same error for unknown email and wrong password', async () => {
@@ -201,6 +227,7 @@ test('role middleware allows an admin and denies a student', async () => {
     email: adminEmail,
     role: 'ADMIN',
     passwordHash: await bcrypt.hash(student.password, 10),
+    sessionVersion: 0,
   });
 
   const studentSession = (await (await login()).json()).data;
@@ -212,6 +239,98 @@ test('role middleware allows an admin and denies a student', async () => {
   expect(
     (await request('/test/admin', { token: adminSession.token })).status,
   ).toBe(204);
+});
+
+const passwordChange = {
+  currentPassword: student.password,
+  newPassword: 'a different password',
+  confirmPassword: 'a different password',
+};
+
+function changePassword(token, body = passwordChange) {
+  return request('/api/auth/password', { method: 'PUT', token, body });
+}
+
+test('changing a password revokes the account’s current and legacy sessions', async () => {
+  await register();
+  const { data: session } = await (await login()).json();
+  const legacy = jwt.sign({}, jwtSecret, { subject: session.user.id });
+  expect((await request('/api/auth/me', { token: legacy })).status).toBe(200);
+
+  expect((await changePassword()).status).toBe(401);
+  const changed = await changePassword(session.token);
+  expect(changed.status).toBe(204);
+  expect(await changed.text()).toBe('');
+  for (const token of [session.token, legacy]) {
+    expect((await request('/api/auth/me', { token })).status).toBe(401);
+    expect((await request('/api/me/dashboard', { token })).status).toBe(401);
+  }
+  expect((await login()).status).toBe(401);
+  const response = await login(student.email, passwordChange.newPassword);
+  expect(response.status).toBe(200);
+  const { data } = await response.json();
+  expect((await request('/api/auth/me', { token: data.token })).status).toBe(
+    200,
+  );
+});
+
+test.each([
+  [{ currentPassword: 'incorrect password' }, 'currentPassword'],
+  [{ newPassword: 'short', confirmPassword: 'short' }, 'newPassword'],
+  [{ confirmPassword: 'does not match' }, 'confirmPassword'],
+  [
+    { newPassword: student.password, confirmPassword: student.password },
+    'newPassword',
+  ],
+  [{ userId: 'another-user' }, 'body'],
+])(
+  'rejects invalid password changes without revoking the session',
+  async (changes, field) => {
+    await register();
+    const { data: session } = await (await login()).json();
+    const response = await changePassword(session.token, {
+      ...passwordChange,
+      ...changes,
+    });
+    expect(response.status).toBe(400);
+    expect((await response.json()).error.fields[field]).toBeTruthy();
+    expect(
+      (await request('/api/auth/me', { token: session.token })).status,
+    ).toBe(200);
+    expect((await login()).status).toBe(200);
+  },
+);
+
+test('only one concurrent password change can use the same session', async () => {
+  await register();
+  const { data: session } = await (await login()).json();
+  const secondPassword = 'another valid password';
+  const [first, second] = await Promise.all([
+    changePassword(session.token),
+    changePassword(session.token, {
+      ...passwordChange,
+      newPassword: secondPassword,
+      confirmPassword: secondPassword,
+    }),
+  ]);
+  expect([first.status, second.status].sort()).toEqual([204, 401]);
+  const winningPassword =
+    first.status === 204 ? passwordChange.newPassword : secondPassword;
+  expect((await login(student.email, winningPassword)).status).toBe(200);
+});
+
+test('password change limits are separate for signed-in accounts', async () => {
+  await register();
+  const otherEmail = 'other@example.test';
+  await register({ ...student, email: otherEmail });
+  const { data: session } = await (await login()).json();
+  const { data: otherSession } = await (await login(otherEmail)).json();
+
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    expect((await changePassword(session.token, {})).status).toBe(400);
+  }
+  expect((await changePassword(session.token, {})).status).toBe(429);
+  expect((await changePassword(otherSession.token, {})).status).toBe(400);
 });
 
 test('auth endpoints rate-limit repeated requests', async () => {

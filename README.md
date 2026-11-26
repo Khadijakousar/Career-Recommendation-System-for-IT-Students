@@ -50,6 +50,8 @@ Use Node.js 24 LTS (24.12 or newer within the 24.x line), npm, and PostgreSQL. W
 
 Public signup creates student accounts. After confirming their password and creating an account, students return to the sign-in page. Students land on the dashboard, and admins land on the admin overview.
 
+Students and admins can use **Change password** from their workspace. The current password is required. Saving a new password invalidates all existing sessions for that account.
+
 The API signs seven-day JWTs. The browser stores the token in `localStorage` to restore the session after a refresh. JavaScript on the same origin can read this storage, so an XSS flaw could expose the token. Signing out clears the browser's stored token.
 
 ## Starter data

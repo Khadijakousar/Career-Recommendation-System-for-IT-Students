@@ -61,9 +61,12 @@ export function AuthProvider({ children }) {
     setSession({ status: 'ready', user, token });
   }
 
-  function signOut() {
+  function signOut(reason) {
     storeToken(null);
-    setSession(signedOut);
+    setSession({
+      ...signedOut,
+      passwordChanged: reason === 'password-changed',
+    });
   }
 
   function retry() {

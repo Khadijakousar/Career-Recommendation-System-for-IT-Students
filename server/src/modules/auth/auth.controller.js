@@ -13,5 +13,14 @@ export function createAuthController(authService) {
     me(request, response) {
       response.json({ data: { user: request.user } });
     },
+
+    async changePassword(request, response) {
+      await authService.changePassword(
+        request.user.id,
+        request.sessionVersion,
+        request.validated.body,
+      );
+      response.status(204).end();
+    },
   };
 }

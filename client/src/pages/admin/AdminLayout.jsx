@@ -29,6 +29,9 @@ export default function AdminLayout() {
           </NavLink>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
             <span className="break-all text-muted">{user.name}</span>
+            <NavLink to="/admin/account/password" className="auth-link">
+              Change password
+            </NavLink>
             <button type="button" onClick={signOut} className="auth-link">
               Sign out
             </button>

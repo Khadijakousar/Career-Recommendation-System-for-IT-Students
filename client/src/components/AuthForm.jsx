@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import PasswordInput from './PasswordInput.jsx';
 
 export default function AuthForm({ fields, submitLabel, onSubmit }) {
   const [pending, setPending] = useState(false);
@@ -38,22 +39,25 @@ export default function AuthForm({ fields, submitLabel, onSubmit }) {
       {fields.map(({ name, label, type = 'text', autoComplete, hint }) => {
         const fieldError = error?.fields?.[name];
         const details = fieldError || hint;
+        const inputProps = {
+          id: name,
+          name,
+          autoComplete,
+          required: true,
+          'aria-invalid': fieldError ? true : undefined,
+          'aria-describedby': details ? `${name}-details` : undefined,
+        };
 
         return (
           <div key={name}>
             <label htmlFor={name} className="block text-sm font-semibold">
               {label}
             </label>
-            <input
-              id={name}
-              name={name}
-              type={type}
-              autoComplete={autoComplete}
-              required
-              aria-invalid={fieldError ? true : undefined}
-              aria-describedby={details ? `${name}-details` : undefined}
-              className="mt-2 block min-h-11 w-full border border-line bg-white/70 px-3 py-2 text-base focus:border-accent focus:outline-2 focus:outline-accent aria-invalid:border-error"
-            />
+            {type === 'password' ? (
+              <PasswordInput {...inputProps} label={label} />
+            ) : (
+              <input {...inputProps} type={type} className="form-input" />
+            )}
             {details && (
               <p
                 id={`${name}-details`}

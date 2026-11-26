@@ -4,6 +4,7 @@ import { HttpError } from '../../middleware/errorHandler.js';
 
 const passwordCost = 10;
 const publicUserFields = { id: true, name: true, email: true, role: true };
+const sessionUserFields = { ...publicUserFields, sessionVersion: true };
 // Run the same bcrypt comparison when the email does not exist.
 const missingUserHash =
   '$2b$10$vCBaWyb/yL0CjSlcePa5VecQSZ/c8SuVUWs9k/J250BXFoGBMXJSW';
@@ -30,7 +31,7 @@ export function createAuthService({ database, jwtSecret }) {
     async login({ email, password }) {
       const record = await database.user.findUnique({
         where: { email },
-        select: { ...publicUserFields, passwordHash: true },
+        select: { ...sessionUserFields, passwordHash: true },
       });
 
       const passwordMatches = await bcrypt.compare(
@@ -41,8 +42,8 @@ export function createAuthService({ database, jwtSecret }) {
         throw new HttpError(401, 'Invalid email or password');
       }
 
-      const { id, name, role } = record;
-      const token = jwt.sign({}, jwtSecret, {
+      const { id, name, role, sessionVersion } = record;
+      const token = jwt.sign({ sessionVersion }, jwtSecret, {
         algorithm: 'HS256',
         subject: id,
         expiresIn: '7d',
@@ -54,8 +55,28 @@ export function createAuthService({ database, jwtSecret }) {
     getUser(id) {
       return database.user.findUnique({
         where: { id },
-        select: publicUserFields,
+        select: sessionUserFields,
       });
+    },
+
+    async changePassword(id, sessionVersion, { currentPassword, newPassword }) {
+      const record = await database.user.findUnique({
+        where: { id, sessionVersion },
+        select: { passwordHash: true },
+      });
+      if (!record) throw new HttpError(401, 'Invalid or expired session');
+
+      if (!(await bcrypt.compare(currentPassword, record.passwordHash))) {
+        const message = 'Current password is incorrect';
+        throw new HttpError(400, message, { currentPassword: message });
+      }
+
+      const passwordHash = await bcrypt.hash(newPassword, passwordCost);
+      const { count } = await database.user.updateMany({
+        where: { id, sessionVersion, passwordHash: record.passwordHash },
+        data: { passwordHash, sessionVersion: { increment: 1 } },
+      });
+      if (count === 0) throw new HttpError(401, 'Invalid or expired session');
     },
   };
 }

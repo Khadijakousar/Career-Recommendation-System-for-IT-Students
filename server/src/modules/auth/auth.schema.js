@@ -14,6 +14,8 @@ const password = z
     (value) => Buffer.byteLength(value, 'utf8') <= 72,
     'Password must be 72 bytes or fewer',
   );
+const newPassword = password.min(8, 'Use at least 8 characters');
+const confirmPassword = z.string().min(1, 'Confirm your password');
 
 const emptyObject = z.strictObject({});
 
@@ -26,8 +28,8 @@ export const registerSchema = requestSchema(
     .strictObject({
       name: z.string().trim().min(1, 'Enter your name').max(100),
       email,
-      password: password.min(8, 'Use at least 8 characters'),
-      confirmPassword: z.string().min(1, 'Confirm your password'),
+      password: newPassword,
+      confirmPassword,
     })
     .refine((body) => body.password === body.confirmPassword, {
       path: ['confirmPassword'],
@@ -37,3 +39,16 @@ export const registerSchema = requestSchema(
 
 export const loginSchema = requestSchema(z.strictObject({ email, password }));
 export const meSchema = requestSchema(z.undefined());
+
+export const changePasswordSchema = requestSchema(
+  z
+    .strictObject({ currentPassword: password, newPassword, confirmPassword })
+    .refine((body) => body.newPassword === body.confirmPassword, {
+      path: ['confirmPassword'],
+      message: 'Passwords must match',
+    })
+    .refine((body) => body.newPassword !== body.currentPassword, {
+      path: ['newPassword'],
+      message: 'Choose a password different from your current password',
+    }),
+);
