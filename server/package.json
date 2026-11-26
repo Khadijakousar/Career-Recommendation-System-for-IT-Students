@@ -17,8 +17,8 @@
     "format:check": "prettier --check src tests prisma/seed.js prisma/seed-data prisma.config.js eslint.config.js package.json"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "7.9.1",
-    "@prisma/client": "7.9.1",
+    "@prisma/adapter-pg": "7.10.1",
+    "@prisma/client": "7.10.1",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "express": "^5.0.0",
@@ -33,7 +33,12 @@
     "eslint": "^9.0.0",
     "globals": "^16.0.0",
     "prettier": "^3.0.0",
-    "prisma": "7.9.1",
+    "prisma": "7.10.1",
     "vitest": "^4.0.0"
+  },
+  "overrides": {
+    "@prisma/config": {
+      "effect": "3.22.1"
+    }
   }
 }
