@@ -1,5 +1,9 @@
 import { request } from './request.js';
 
+export function listCareers(token, signal) {
+  return request('careers', { token, signal });
+}
+
 export async function getCareerDetails(slug, token, signal) {
   const career = await request(`careers/${encodeURIComponent(slug)}`, {
     token,

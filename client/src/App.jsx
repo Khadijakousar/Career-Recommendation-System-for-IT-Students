@@ -7,6 +7,7 @@ import LoginPage from './pages/auth/LoginPage.jsx';
 import RegisterPage from './pages/auth/RegisterPage.jsx';
 import SetupPage from './pages/SetupPage.jsx';
 import CareerDetailPage from './pages/student/CareerDetailPage.jsx';
+import CareerListPage from './pages/student/CareerListPage.jsx';
 import InterestAssessmentPage from './pages/student/InterestAssessmentPage.jsx';
 import ProfilePage from './pages/student/ProfilePage.jsx';
 import RecommendationsPage from './pages/student/RecommendationsPage.jsx';
@@ -58,6 +59,7 @@ export default function App() {
                   path="/recommendations"
                   element={<RecommendationsPage />}
                 />
+                <Route path="/careers" element={<CareerListPage />} />
                 <Route path="/careers/:slug" element={<CareerDetailPage />} />
                 <Route path="/roadmaps" element={<RoadmapListPage />} />
                 <Route path="/roadmaps/:id" element={<RoadmapPage />} />

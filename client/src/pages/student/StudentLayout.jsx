@@ -7,6 +7,7 @@ const navigation = [
   ['/profile', 'Profile'],
   ['/assessment/skills', 'Skills'],
   ['/assessment/interests', 'Interests'],
+  ['/careers', 'Careers', false],
   ['/recommendations', 'Recommendations'],
   ['/roadmaps', 'Roadmaps'],
 ];
@@ -33,11 +34,11 @@ export default function StudentLayout() {
           aria-label="Student workspace"
           className="flex flex-wrap gap-x-1 border-b border-line py-2"
         >
-          {navigation.map(([path, title]) => (
+          {navigation.map(([path, title, end = true]) => (
             <NavLink
               key={path}
               to={path}
-              end
+              end={end}
               className={({ isActive }) =>
                 `border-b-2 px-2 py-2.5 text-sm font-semibold transition-colors focus-visible:outline-accent motion-reduce:transition-none sm:px-3 ${isActive ? 'border-accent bg-accent/8 text-accent' : 'border-transparent text-muted hover:bg-accent/5 hover:text-ink'}`
               }
